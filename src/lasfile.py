@@ -464,9 +464,13 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
 
 def parse_data_section(raw_data,version_num,delimiter=None):
     """
-    Parses the data section of the input raw data based on the provided version number.
+    Parses the data section of the input raw data 
+    based on the provided version number.
 
-    This function handles the parsing of the data section from the input raw data. It removes lines beginning with '#' or '~', and then loads the data into a LASData object.
+    This function handles the parsing of the data 
+    section from the input raw data. It removes lines 
+    beginning with '#' or '~', and then loads the data 
+    into a LASData object.
 
     Parameters:
     ----------
@@ -474,10 +478,13 @@ def parse_data_section(raw_data,version_num,delimiter=None):
         The raw data to be parsed.
 
     version_num : str
-        The version number, which is used when loading the data into a LASData object.
+        The version number, which is used when loading 
+        the data into a LASData object.
 
     delimiter : str, optional
-        The delimiter character used to separate values in the data. If not provided, the default delimiter for the LASData class is used.
+        The delimiter character used to separate values 
+        in the data. If not provided, the default delimiter 
+        for the LASData class is used.
 
     Returns:
     -------

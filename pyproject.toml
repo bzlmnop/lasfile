@@ -19,8 +19,7 @@ dependencies = [
 requires-python = ">=3.6"
 
 [project.urls]
-homepage = ""
-documentation = ""
+homepage = "https://github.com/bzlmnop/lasfile"
 
 [project.scripts]
 lasfile = "lasfile.__main__:main"
