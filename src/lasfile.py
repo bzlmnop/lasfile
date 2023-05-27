@@ -7,15 +7,183 @@ from numpy import genfromtxt
 from pandas import DataFrame
 import json
 from os import path
-import importlib.resources
+from pkgutil import get_data
+
 
 # Set known versions
 known_versions = ['1.2','2.0','3.0']
-
-# Get the path to the known sections json file
-known_sections_path = importlib.resources.open_text("lasfile", "known_sections.json")
-# Load known sections from json file
-known_sections = json.load(open(known_sections_path,'r'))
+# Set known sections
+known_sections = {
+    "1.2":
+    {
+        "version":
+        {
+            "type":"header",
+            "titles":["v","V"]
+        },
+        "well":
+        {
+            "type":"header",
+            "titles":["w","W"]
+        },
+        "parameters":
+        {
+            "type":"header",
+            "titles":["p","P"]
+        },
+        "curves":
+        {
+            "type":"header",
+            "titles":["c","C"]
+        },
+        "data":
+        {
+            "type":"data",
+            "titles":["a","A"]
+        },
+        "other":
+        {
+            "type":"header",
+            "titles":["o","O"]
+        }
+    },
+    "2.0":
+    {
+        "version":
+        {
+            "type":"header",
+            "titles":["v","V"]
+        },
+        "well":
+        {
+            "type":"header",
+            "titles":["w","W"]
+        },
+        "parameters":
+        {
+            "type":"header",
+            "titles":["p","P"]
+        },
+        "curves":
+        {
+            "type":"header",
+            "titles":["c","C"]
+        },
+        "data":
+        {
+            "type":"data",
+            "titles":["a","A"]
+        },
+        "other":
+        {
+            "type":"header",
+            "titles":["o","O"]
+        }
+    },
+    "3.0":
+    {
+        "version":
+        {
+            "type": "header",
+            "titles":["version"]
+        },
+        "well":
+        {
+            "type": "header",
+            "titles": ["well"]
+        },
+        "parameters":
+        {
+            "type": "header",
+            "titles":["parameter","log_parameter"]
+        },
+        "curves":
+        {
+            "type": "header",
+            "titles":["curves","curve","curve_definition","log_definition"]
+        },
+        "data":
+        {
+            "type": "data",
+            "titles":["log_data","ascii","data"]
+        },
+        "core_parameters":
+        {
+            "type": "header",
+            "titles":["core_parameters"]
+        },
+        "core_definition":
+        {
+            "type": "header",
+            "titles":["core_definition"]
+        },
+        "core_data":
+        {
+            "type": "data",
+            "titles":["core_data"]
+        },
+        "inclinometry_parameters":
+        {
+            "type": "header",
+            "titles":["inclinometry_parameters"]
+        },
+        "inclinometry_definition":
+        {
+            "type": "header",
+            "titles":["inclinometry_definition"]
+        },
+        "inclinometry_data":
+        {
+            "type": "data",
+            "titles":["inclinometry_data"]
+        },
+        "drill_parameters":
+        {
+            "type": "header",
+            "titles":["drill_parameters"]
+        },
+        "drill_definition":
+        {
+            "type": "header",
+            "titles":["drill_definition"]
+        },
+        "drill_data":
+        {
+            "type": "data",
+            "titles":["drill_data"]
+        },
+        "tops_parameters":
+        {
+            "type": "header",
+            "titles":["tops_parameters"]
+        },
+        "tops_definition":
+        {
+            "type": "header",
+            "titles":["tops_definition"]
+        },
+        "tops_data":
+        {
+            "type": "data",
+            "titles":["tops_data"]
+        },
+        "test_parameters":
+        {
+            "type": "header",
+            "titles":["test_parameters"]
+        },
+        "test_definition":
+        {
+            "type": "header",
+            "titles":["test_definition"]
+        },
+        "test_data":
+        {
+            "type": "data",
+            "titles":["test_data"]
+        }
+    }
+}
 
 def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False):
     """
