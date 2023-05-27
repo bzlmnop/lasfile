@@ -12,3 +12,7 @@ import lasfile
 
 las = lasfile.LASFile(file_path='path/to/file.las')
 ```
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
+```

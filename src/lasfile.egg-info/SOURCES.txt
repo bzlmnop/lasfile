@@ -1,0 +1,13 @@
+LICENSE
+MANIFEST.in
+README.md
+pyproject.toml
+src/__init__.py
+src/known_sections.json
+src/lasfile.py
+src/lasfile.egg-info/PKG-INFO
+src/lasfile.egg-info/SOURCES.txt
+src/lasfile.egg-info/dependency_links.txt
+src/lasfile.egg-info/entry_points.txt
+src/lasfile.egg-info/requires.txt
+src/lasfile.egg-info/top_level.txt

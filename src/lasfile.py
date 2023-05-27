@@ -6,11 +6,15 @@ from io import StringIO
 from numpy import genfromtxt
 from pandas import DataFrame
 import json
+from os import path
 
 # Set known versions
 known_versions = ['1.2','2.0','3.0']
+
+# Get the path to the known sections json file
+known_sections_path = path.join(path.dirname(__file__),"known_sections.json")
 # Load known sections from json file
-known_sections = json.load(open("known_sections.json",'r'))
+known_sections = json.load(open(known_sections_path,'r'))
 
 def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False):
     """
