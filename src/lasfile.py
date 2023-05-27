@@ -12,7 +12,10 @@ from os import path
 known_versions = ['1.2','2.0','3.0']
 
 # Get the path to the known sections json file
-known_sections_path = path.join(path.dirname(__file__),"known_sections.json")
+known_sections_path = path.join(
+    path.dirname(path.abspath(__file__)),
+    'known_sections.json'
+)
 # Load known sections from json file
 known_sections = json.load(open(known_sections_path,'r'))
 
