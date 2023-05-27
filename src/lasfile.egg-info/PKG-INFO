@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: lasfile
-Version: 0.1.5
+Version: 0.1.6
 Summary: A Python library for reading LAS files.
 Project-URL: homepage, https://github.com/bzlmnop/lasfile
 Keywords: las,CWLS,las logs,petrophysical logs

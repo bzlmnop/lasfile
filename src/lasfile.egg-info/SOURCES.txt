@@ -3,7 +3,6 @@ MANIFEST.in
 README.md
 pyproject.toml
 src/__init__.py
-src/known_sections.json
 src/lasfile.py
 src/lasfile.egg-info/PKG-INFO
 src/lasfile.egg-info/SOURCES.txt

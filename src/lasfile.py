@@ -185,7 +185,7 @@ known_sections = {
     }
 }
 
-def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False):
+def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False,unknown_value=None):
     """
     Extracts and validates the version number from the given data.
 
