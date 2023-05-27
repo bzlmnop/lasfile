@@ -189,23 +189,30 @@ def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False
     """
     Extracts and validates the version number from the given data.
 
-    This function accepts either a string containing a version section, or a DataFrame containing a mnemonic column with a "VERS" value. It then tries to extract the version number and validate it. It handles several common errors, such as non-numeric versions, and allows the acceptance of unknown versions. 
+    This function accepts either a string containing a version section, 
+    or a DataFrame containing a mnemonic column with a "VERS" value. 
+    It then tries to extract the version number and validate it. 
+    It handles several common errors, such as non-numeric versions, and 
+    allows the acceptance of unknown versions. 
 
     Parameters:
     ----------
     data : str or pandas.DataFrame
         The input data to extract the version number from. 
         If a string, it should contain a version section marked with '~V'. 
-        If a DataFrame, it should contain a column named 'mnemonic' with a "VERS" value.
+        If a DataFrame, it should contain a column named 'mnemonic' with a 
+        "VERS" value.
 
     handle_common_errors : bool, optional
-        Whether to handle common errors, such as whole number versions. (default is True)
+        Whether to handle common errors, such as whole number versions. 
+        (default is True)
 
     accept_unknown_versions : bool, optional
         Whether to accept and return unknown versions. (default is False)
 
     allow_non_numeric : bool, optional
-        Whether to allow and return non-numeric versions. This only works if `accept_unknown_versions` is also True. (default is False)
+        Whether to allow and return non-numeric versions. This only works 
+        if `accept_unknown_versions` is also True. (default is False)
 
     Returns:
     -------
@@ -218,7 +225,8 @@ def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False
         If the input data is neither a string nor a DataFrame.
 
     Exception:
-        If the version number could not be retrieved, or if it was not recognized and `accept_unknown_versions` is False.
+        If the version number could not be retrieved, or if it 
+        was not recognized and `accept_unknown_versions` is False.
     """
     if type(data) == str:
         section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
