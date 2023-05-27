@@ -7,15 +7,13 @@ from numpy import genfromtxt
 from pandas import DataFrame
 import json
 from os import path
+import importlib.resources
 
 # Set known versions
 known_versions = ['1.2','2.0','3.0']
 
 # Get the path to the known sections json file
-known_sections_path = path.join(
-    path.dirname(path.abspath(__file__)),
-    'known_sections.json'
-)
+known_sections_path = importlib.resources.open_text("lasfile", "known_sections.json")
 # Load known sections from json file
 known_sections = json.load(open(known_sections_path,'r'))
 
