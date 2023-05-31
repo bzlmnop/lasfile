@@ -185,7 +185,13 @@ known_sections = {
     }
 }
 
-def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False,unknown_value=None):
+def get_version_num(
+        data,
+        handle_common_errors=True,
+        accept_unknown_versions=False,
+        allow_non_numeric=False,
+        unknown_value=None
+    ):
     """
     Extracts and validates the version number from the given data.
 
@@ -265,39 +271,47 @@ def get_version_num(data,handle_common_errors=True,accept_unknown_versions=False
                 if allow_non_numeric:
                     return version_num
         else:
-            raise Exception(f"Couldnt get version, version number not recognized.")
+            raise Exception(
+                f"Couldnt get version, version number not recognized."
+            )
 
-def get_version_section(data,handle_common_errors=True,accept_unknown_versions=False,allow_non_numeric=False,unknown_value=None):
+def get_version_section(
+        data,
+        handle_common_errors=True,
+        accept_unknown_versions=False,
+        allow_non_numeric=False,
+        unknown_value=None
+    ):
     """
-    Extracts the version section from the given raw data, 
-    parses it, validates it, and returns a loaded section object.
+    Extracts the version section from the given raw data, parses it, 
+    validates it, and returns a loaded section object.
 
-    This function performs several steps to process the version 
-    section from the raw data. It extracts the version section, 
-    parses it into a DataFrame, attempts to extract and validate a 
-    version number, and then tries to load this all into a LASSection object.
+    This function performs several steps to process the version section 
+    from the raw data. It extracts the version section, parses it into 
+    a DataFrame, attempts to extract and validate a version number, and 
+    then tries to load this all into a LASSection object.
 
     Parameters:
     ----------
     data : str
-        The raw data string to extract the version section from. 
-        The version section should be marked with '~V'. 
+        The raw data string to extract the version section from. The 
+        version section should be marked with '~V'. 
 
     handle_common_errors : bool, optional
         Whether to handle common errors when extracting the 
         version number. (default is True)
 
     accept_unknown_versions : bool, optional
-        Whether to accept unknown versions when extracting the 
-        version number. (default is False)
+        Whether to accept unknown versions when extracting the version 
+        number. (default is False)
 
     allow_non_numeric : bool, optional
         Whether to allow non-numeric versions when extracting the 
         version number. (default is False)
 
     unknown_value : any, optional
-        The value to use when an unknown version number is 
-        encountered. This only applies if `accept_unknown_versions` 
+        The value to use when an unknown version number is encountered. 
+        This only applies if `accept_unknown_versions` 
         is also True. (default is None)
 
     Returns:
@@ -347,7 +361,15 @@ def get_version_section(data,handle_common_errors=True,accept_unknown_versions=F
             dlm_val = None
         # Attempt to load the section into a section object
         try:
-            loaded_section = LASSection('version',version_section,'header',version_num,delimiter=dlm_val,parse_on_init=False,validate_on_init=False)
+            loaded_section = LASSection(
+                'version',
+                version_section,
+                'header',
+                version_num,
+                delimiter=dlm_val,
+                parse_on_init=False,
+                validate_on_init=False
+            )
             loaded_section.df = df
             loaded_section.validated = True
             loaded_section.version_num = version_num
@@ -357,7 +379,12 @@ def get_version_section(data,handle_common_errors=True,accept_unknown_versions=F
     else:
         raise Exception("Coulnt validate version section.")
 
-def parse_title_line(title_line,version_num,all_lowercase=True,associations=False):
+def parse_title_line(
+        title_line,
+        version_num,
+        all_lowercase=True,
+        associations=False
+    ):
     """
     Parses the title line based on the provided version number.
 
@@ -397,26 +424,28 @@ def parse_title_line(title_line,version_num,all_lowercase=True,associations=Fals
     if version_num == "1.2" or version_num == "2.0":
         return parse_v2_title(title_line,all_lowercase=all_lowercase)
     elif version_num == "3.0":
-        return parse_v3_title(title_line,all_lowercase=all_lowercase,associations=associations)
+        return parse_v3_title(
+            title_line,
+            all_lowercase=all_lowercase,
+            associations=associations
+        )
 
 def parse_v2_title(title_line,all_lowercase=True):
     """
     Parses a version 2.0 title line.
 
-    This function specifically handles the parsing of 
-    title lines for version 2.0. It checks if the line 
-    begins with '~', extracts the section title, and 
-    optionally converts it to lowercase.
+    This function specifically handles the parsing of title lines for 
+    version 2.0. It checks if the line begins with '~', extracts the 
+    section title, and optionally converts it to lowercase.
 
     Parameters:
     ----------
     title_line : str
-        The title line to be parsed. This should begin 
-        with '~'.
+        The title line to be parsed. This should begin with '~'.
 
     all_lowercase : bool, optional
-        Whether to convert the section title to 
-        lowercase. (default is True)
+        Whether to convert the section title to lowercase. 
+        (default is True)
 
     Returns:
     -------
@@ -438,16 +467,19 @@ def parse_v2_title(title_line,all_lowercase=True):
             section_title = section_title.lower()
         return section_title
     else:
-        raise Exception("Cannot parse a line that does not begin with '~' as a title line.")
+        raise Exception(
+            "Cannot parse a line that does not begin with '~' as a "
+            "title line."
+        )
 
 def parse_v3_title(title_line,all_lowercase=True,associations=False):
     """
     Parses a version 3.0 title line.
 
-    This function specifically handles the parsing of title 
-    lines for version 3.0. It checks if the line begins 
-    with '~', extracts the section title and optionally an 
-    associated value, and converts them to lowercase if requested.
+    This function specifically handles the parsing of title lines for 
+    version 3.0. It checks if the line begins with '~', extracts the 
+    section title and optionally an associated value, and converts them 
+    to lowercase if requested.
 
     Parameters:
     ----------
@@ -455,8 +487,8 @@ def parse_v3_title(title_line,all_lowercase=True,associations=False):
         The title line to be parsed. This should begin with '~'.
 
     all_lowercase : bool, optional
-        Whether to convert the section title and association 
-        to lowercase. (default is True)
+        Whether to convert the section title and association to 
+        lowercase. (default is True)
 
     associations : bool, optional
         Whether to consider associations in the parsing process. 
@@ -465,9 +497,9 @@ def parse_v3_title(title_line,all_lowercase=True,associations=False):
     Returns:
     -------
     section_title : str or tuple
-        The parsed section title from the title line. If 
-        'associations' is True and an association is present, 
-        a tuple of (section_title, association) is returned.
+        The parsed section title from the title line. If 'associations' 
+        is True and an association is present, a tuple of 
+        (section_title, association) is returned.
 
     Raises:
     ------
@@ -479,22 +511,42 @@ def parse_v3_title(title_line,all_lowercase=True,associations=False):
     title_line = title_line.strip()
     # Check if it actually is a title line
     if title_line.startswith('~'):
+        # Strip leading '~'
         title_line = title_line.strip('~')
+        # Check if there is an association
         if '|' in title_line:
+            # If so, split the title line into the title and association
             has_association = True
             title_line,association = title_line.split('|')
-            association = association.strip().split(' ')[0] if association.strip().split(' ')[0] != '' else None
-        section_title = title_line.split(' ')[0] if title_line.split(' ')[0] != '' else None
+            # If the association is not empty, strip leading and 
+            # trailing whitespace
+            if association.strip().split(' ')[0] != '':
+                association = association.strip().split(' ')[0]
+            # Otherwise, set the association to None
+            else:
+                association = None
+        # Extract the section title
+        if title_line.split(' ')[0] != '':
+            section_title = title_line.split(' ')[0]
+        else:
+            section_title = None
+        # Convert to lowercase if requested
         if all_lowercase:
             section_title = section_title.lower()
             if associations and has_association:
                 association.lower()
+        # Return the section title and association if requested
         if associations and has_association:
             return section_title,association
+        # Otherwise, just return the section title
         else:
             return section_title
     else:
-        raise Exception("Cannot parse a line that does not begin with '~' as a title line.")
+        # If the line does not begin with '~', raise an exception
+        raise Exception(
+            "Cannot parse a line that does not begin with '~' as a "
+            "title line."
+        )
 
 def split_sections(data,version_num,known_sections=known_sections):
     """
@@ -535,13 +587,18 @@ def split_sections(data,version_num,known_sections=known_sections):
         If the version number is not one of the expected 
         values ("1.2", "2.0", "3.0").
     """
+    # Split the data into sections based on the version number
     if version_num == '1.2' or version_num == '2.0':
+        # Use a regular expression to split the data into sections
         section_regex = re.compile(r'(~[VWPCOA].+?)(?=~[VWPCOA]|$)', re.DOTALL)
         sections = re.findall(section_regex, data)
+        # Store the sections in a dictionary
         section_dict = {}
         for section in sections:
+            # Get the title line/header of the section
             header_end = section.index('\n')
             header = section[:header_end].strip().upper()
+            # Store the section in the dictionary based on the header
             if header.startswith('~W'):
                 section_dict['well'] = section.strip()
             elif header.startswith('~V'):
@@ -554,104 +611,188 @@ def split_sections(data,version_num,known_sections=known_sections):
                 section_dict['other'] = section.strip()
             elif header.startswith('~A'):
                 section_dict['data'] = section.strip()
+        # Return the dictionary of sections
         return section_dict
     elif version_num == '3.0':
+        # Use a regular expression to split the data into sections
         section_regex = re.compile(r'(~[A-Za-z].+?)(?=~[A-Za-z]|$)', re.DOTALL)
         sections = re.findall(section_regex, data)
+        # Store the sections in a dictionary
         section_dict = {}
+        # Get the known sections for version 3.0
         known_sections = known_sections["3.0"]
         known_section_names = known_sections.keys()
         for section in sections:
+            # Get the title line/header of the section
             section_found = False
             title_line_end = section.index('\n')
             title_line = section[:title_line_end].strip()
+            # Parse the title line to get the section title
             section_title = parse_title_line(title_line,"3.0",all_lowercase=True)
+            # If the section title is a known section name, store it
+            # using the known section name as the key
             if section_title in known_section_names:
                 section_dict[section_title] = section.strip()
                 section_found = True
+            # If the section title is not a known section name, check
+            # if it is an alias for a known section name then store it
+            # using the known section name as the key
             else:
-                for known_section_name,known_section  in known_sections.items():
+                for known_section_name,known_section in known_sections.items():
                     if section_title in known_section["titles"]:
                         section_dict[known_section_name] = section.strip()
                         section_found = True
                 if not section_found:
                     section_dict[section_title] = section.strip()
+        # Return the dictionary of sections
         return section_dict
     else:
+        # Raise an exception if the version number is not one of the 
+        # expected values
         raise Exception("Unknown version. Must be '1.2','2.0', or '3.0'")
 
 def parse_header_section(section_string, version_num='2.0', delimiter=None):
+    """
+    Parses the header section of a LAS file.
+    
+    This function parses the header section of a LAS file and returns
+    a dictionary with the parsed information. The version number is
+    used to determine how the header section is parsed. The delimiter
+    is used to split the header section into lines. If no delimiter is
+    provided, the header section is split into lines using the newline
+    character.
+
+    Parameters:
+    ----------
+    section_string : str
+        The header section of a LAS file.
+    
+    version_num : str, optional
+        The version number of the LAS file. (default is '2.0')
+    
+    delimiter : str, optional
+        The delimiter used to split the header section into lines.
+        (default is None)
+
+    Returns:
+    -------
+    header_dict : dict
+        A DataFrame with the parsed header information.
+    """
     results = []
     lines = section_string.strip().split("\n")
     if version_num == '2.0' or version_num == '1.2':
+        # Skip comment, title, and empty lines
         for line in lines:
-            if line.strip().startswith("#") or line.strip().startswith("~") or line.strip().strip("\n") == "":
+            if (
+                line.strip().startswith("#") or 
+                line.strip().startswith("~") or 
+                line.strip().strip("\n") == ""
+            ):
                 continue
+            # Remove whitespace from the line
             line = line.strip()
-            first_period = line.index('.')
-            mnemonic = line[:first_period].strip()
-            line_after_first_period = line[first_period+1:]
-            first_space_after_first_period = line_after_first_period.index(' ')
-            units = line_after_first_period[:first_space_after_first_period].strip()
-            last_colon = line_after_first_period.rindex(':')
-            value = line_after_first_period[first_space_after_first_period:last_colon].strip()
-            description = line_after_first_period[last_colon+1:].strip()
-            results.append({
-                        "mnemonic": mnemonic,
-                        "units": units if units != "" else None,
-                        "value": value if value != "" else None,
-                        "description": description if description != "" else None
-                    })
+            # Get the mnemonic.
+            # The mnemonic is everything before the first period, 
+            # stripped of whitespace.
+            frst_prd = line.index('.')
+            mnemonic = line[:frst_prd].strip()
+            # Get the units.
+            # The units are everything between the first period
+            # and the first space after the first period, stripped
+            # of whitespace.
+            line_aft_frst_prd = line[frst_prd+1:]
+            frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+            units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+            # Get the value.
+            # The value is everything between the first space after
+            # the first period and the last colon, stripped of whitespace.
+            lst_col = line_aft_frst_prd.rindex(':')
+            value = line_aft_frst_prd[frst_spc_aft_frst_prd:lst_col].strip()
+            # Get the description.
+            # The description is everything after the last colon, 
+            # stripped of whitespace.
+            description = line_aft_frst_prd[lst_col+1:].strip()
+            results.append(
+                {
+                    "mnemonic": mnemonic,
+                    "units": units if units != "" else None,
+                    "value": value if value != "" else None,
+                    "description": description if description != "" else None
+                }
+            )
         return DataFrame(results)
     if version_num == '3.0':
         for line in lines:
             format = None
             associations = None
-            if line.strip().startswith("#") or line.strip().startswith("~") or line.strip().strip("\n") == "":
+            # Skip comment, title, and empty lines
+            if (
+                line.strip().startswith("#") or 
+                line.strip().startswith("~") or 
+                line.strip().strip("\n") == ""
+            ):
                 continue
+            # Remove whitespace from the line
             line = line.strip()
-            first_period = line.index('.')
-            mnemonic = line[:first_period].strip()
-            line_after_first_period = line[first_period+1:]
-            first_space_after_first_period = line_after_first_period.index(' ')
-            units = line_after_first_period[:first_space_after_first_period].strip()
-            last_colon = line_after_first_period.rindex(':')
-            value = line_after_first_period[first_space_after_first_period:last_colon].strip()
-            line_after_last_colon = line_after_first_period[last_colon+1:]
-            if '{' in line_after_last_colon and '}' in line_after_last_colon:
-                first_brace_after_last_colon = line_after_last_colon.index('{')
-                description = line_after_last_colon[:first_brace_after_last_colon]
-                line_after_first_brace = line_after_last_colon[first_brace_after_last_colon+1:]
-                closing_brace = line_after_first_brace.rindex('}')
-                format = line_after_first_brace[:closing_brace].strip()
-                line_after_closing_brace = line_after_first_brace[closing_brace+1:]
-                if '|' in line_after_closing_brace:
-                    bar = line_after_closing_brace.index('|')
-                    associations = line_after_closing_brace[bar+1:].strip()
-            elif '|' in line_after_last_colon:
-                bar = line_after_last_colon.index('|')
-                associations = line_after_last_colon[bar+1:].strip()
+            # Get the mnemonic. 
+            # The mnemonic is everything before the 
+            # first period, stripped of whitespace
+            frst_prd = line.index('.')
+            mnemonic = line[:frst_prd].strip()
+            # Get the units. 
+            # The units are everything between the first period and the 
+            # first space after the first period, stripped of whitespace.
+            line_aft_frst_prd = line[frst_prd+1:]
+            frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+            units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+            # Get the value.
+            # The value is everything between the first space after the
+            # first period and the last colon, stripped of whitespace.
+            lst_col = line_aft_frst_prd.rindex(':')
+            value = line_aft_frst_prd[frst_spc_aft_frst_prd:lst_col].strip()
+            # Get the description, format, and associations.
+            # The description is everything after the last colon and 
+            # before the first brace or pipe, if no braces are present, 
+            # stripped of whitespace.
+            line_aft_lst_col = line_aft_frst_prd[lst_col+1:]
+            if '{' in line_aft_lst_col and '}' in line_aft_lst_col:
+                frst_brc_aft_lst_col = line_aft_lst_col.index('{')
+                description = line_aft_lst_col[:frst_brc_aft_lst_col]
+                line_aft_frst_brc = line_aft_lst_col[frst_brc_aft_lst_col+1:]
+                clsng_brc = line_aft_frst_brc.rindex('}')
+                format = line_aft_frst_brc[:clsng_brc].strip()
+                line_aft_clsng_brc = line_aft_frst_brc[clsng_brc+1:]
+                if '|' in line_aft_clsng_brc:
+                    bar = line_aft_clsng_brc.index('|')
+                    associations = line_aft_clsng_brc[bar+1:].strip()
+            elif '|' in line_aft_lst_col:
+                bar = line_aft_lst_col.index('|')
+                associations = line_aft_lst_col[bar+1:].strip()
             else:
-                description = line_after_first_period[last_colon+1:].strip()
-            results.append({
-                        "mnemonic": mnemonic,
-                        "units": units if units != "" else None,
-                        "value": value if value != "" else None,
-                        "description": description if description != "" else None,
-                        "format": format if format != "" else None,
-                        "associations": associations if associations != "" else None,
-                    })
+                description = line_aft_frst_prd[lst_col+1:].strip()
+            # Add the parsed values to the results list
+            results.append(
+                {
+                    "mnemonic": mnemonic,
+                    "units": units if units != "" else None,
+                    "value": value if value != "" else None,
+                    "description": description if description != "" else None,
+                    "format": format if format != "" else None,
+                    "associations": associations if associations != "" else None
+                }
+            )
+        # Return the results as a DataFrame
         return DataFrame(results)
 
 def parse_data_section(raw_data,version_num,delimiter=None):
     """
-    Parses the data section of the input raw data 
-    based on the provided version number.
+    Parses the data section of the input raw data based on the provided 
+    version number.
 
-    This function handles the parsing of the data 
-    section from the input raw data. It removes lines 
-    beginning with '#' or '~', and then loads the data 
-    into a LASData object.
+    This function handles the parsing of the data section from the 
+    input raw data. It removes lines beginning with '#' or '~', and 
+    then loads the data into a LASData object.
 
     Parameters:
     ----------
@@ -659,13 +800,13 @@ def parse_data_section(raw_data,version_num,delimiter=None):
         The raw data to be parsed.
 
     version_num : str
-        The version number, which is used when loading 
-        the data into a LASData object.
+        The version number, which is used when loading the data into a 
+        LASData object.
 
     delimiter : str, optional
-        The delimiter character used to separate values 
-        in the data. If not provided, the default delimiter 
-        for the LASData class is used.
+        The delimiter character used to separate values in the data. If 
+        not provided, the default delimiter for the LASData class is 
+        used.
 
     Returns:
     -------
@@ -673,44 +814,42 @@ def parse_data_section(raw_data,version_num,delimiter=None):
         The loaded data as a LASData object.
 
     """
-    #print(f"unfiltered data: '{raw_data[:1000]}'")
     filtered_data = re.sub(r'^[#~].*\n', '', raw_data, flags=re.MULTILINE)
     loaded_data = LASData(filtered_data,version_num,delimiter=delimiter)
-    #print(f"filtered data: '{filtered_data[:1000]}'")
     return loaded_data
 
 def validate_version(df,version_num=None):
     """
     Validates the version of a dataframe.
 
-    This function checks if the dataframe contains 
-    all required mnemonics for the given version 
-    number and verifies the values of these mnemonics. 
-    The specific checks differ based on the version number.
+    This function checks if the dataframe contains all required 
+    mnemonics for the given version number and verifies the values of 
+    these mnemonics. The specific checks differ based on the version 
+    number.
 
     Parameters:
     ----------
     df : DataFrame
-        The dataframe to be validated. This dataframe 
-        should contain a 'mnemonic' column and a 'value' column.
+        The dataframe to be validated. This dataframe should contain a 
+        'mnemonic' column and a 'value' column.
 
     version_num : str, optional
-        The version number of the dataframe. Must be 
-        either "1.2", "2.0", or "3.0". If not provided, 
-        the function will use the value in the dataframe.
+        The version number of the dataframe. Must be either "1.2", 
+        "2.0", or "3.0". If not provided, the function will use the 
+        value in the dataframe.
 
     Returns:
     -------
     bool:
-        Returns True if the dataframe is valid for the 
-        given version number.
+        Returns True if the dataframe is valid for the given version 
+        number.
 
     Raises:
     ------
     Exception:
-        If any of the required mnemonics are missing or 
-        have invalid values, or if the version number is 
-        not one of the expected values ("1.2", "2.0", "3.0").
+        If any of the required mnemonics are missing or have invalid 
+        values, or if the version number is not one of the expected 
+        values ("1.2", "2.0", "3.0").
     """
     if version_num == "1.2" or version_num == "2.0":
         req_mnemonics = [
@@ -766,24 +905,22 @@ def validate_version(df,version_num=None):
 
 def validate_v2_well(df):
     """
-    Validates the well section of a dataframe for 
-    version 2 LAS files.
+    Validates the well section of a dataframe for version 2 LAS files.
 
-    This function checks if the dataframe contains 
-    all the required mnemonics specific to the well 
-    section of a version 2 LAS file.
+    This function checks if the dataframe contains all the required 
+    mnemonics specific to the well section of a version 2 LAS file.
 
     Parameters:
     ----------
     df : DataFrame
-        The dataframe to be validated. This dataframe 
-        should contain a 'mnemonic' column.
+        The dataframe to be validated. This dataframe should contain a 
+        'mnemonic' column.
 
     Returns:
     -------
     bool:
-        Returns True if the dataframe is valid for the 
-        well section of a version 2 LAS file.
+        Returns True if the dataframe is valid for the well section of 
+        a version 2 LAS file.
 
     Raises:
     ------
@@ -804,17 +941,28 @@ def validate_v2_well(df):
         "DATE",
     ]
     if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-        if "PROV" in df.mnemonic.values or\
-            all(mnemonic in df.mnemonic.values for mnemonic in ["CNTY","STAT","CTRY"]):
+        if (
+            "PROV" in df.mnemonic.values or
+            all(
+                mnemonic 
+                in df.mnemonic.values 
+                for mnemonic in ["CNTY","STAT","CTRY"]
+            )
+        ):
             if "API" in df.mnemonic.values or\
                 "UWI" in df.mnemonic.values:
                  return True
             else:
-                raise Exception("Couldnt validate section, 'UWI' and 'API' items missing.")
+                raise Exception(
+                    "Couldnt validate section, 'UWI' and 'API' items missing."
+                    )
         else:
-            raise Exception("Couldnt validate section, missing 'PROV' or ('CNTY','STAT','CTRY') items.")
+            raise Exception(
+                "Couldnt validate section, missing 'PROV' or "
+                "('CNTY','STAT','CTRY') items."
+            )
     else:
-        raise Exception("Mssing required mnemonics.")
+        raise Exception("Missing required mnemonics.")
 
 # Set of valid country codes for the CTRY mnemonic
 valid_country_codes = ["US","CA"]
@@ -824,29 +972,27 @@ def validate_v3_well(df):
     Validates the well section of a DataFrame for 
     version 3 LAS files.
 
-    This function checks if the DataFrame contains 
-    all the required mnemonics specific to the well 
-    section of a version 3 LAS file. It also validates 
-    geographic coordinates and country code.
+    This function checks if the DataFrame contains all the required 
+    mnemonics specific to the well section of a version 3 LAS file. It 
+    also validates geographic coordinates and country code.
 
     Parameters:
     ----------
     df : DataFrame
-        The DataFrame to be validated. This DataFrame 
-        should contain a 'mnemonic' column.
+        The DataFrame to be validated. This DataFrame should contain a 
+        'mnemonic' column.
 
     Returns:
     -------
     bool:
-        Returns True if the DataFrame is valid for the 
-        well section of a version 3 LAS file.
+        Returns True if the DataFrame is valid for the well section of 
+        a version 3 LAS file.
 
     Raises:
     ------
     Exception:
-        If any of the required mnemonics are missing, or 
-        if geographic coordinates or country code are not 
-        properly specified.
+        If any of the required mnemonics are missing, or if geographic 
+        coordinates or country code are not properly specified.
     """
     # Set of required mnemonics for version 3.0 well sections
     req_mnemonics = [
@@ -862,16 +1008,41 @@ def validate_v3_well(df):
         "CTRY",
         "DATE",
     ]
-    if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-        if all(mnemonic in df.mnemonic.values for mnemonic in ["LATI","LONG","GDAT"]) or\
-            all(mnemonic in df.mnemonic.values for mnemonic in ["X","Y","GDAT","HZCS"]):
-            country_code = df.loc[df["mnemonic"] == "CTRY", 'value'].values[0].upper()
+    if all(
+        mnemonic 
+        in df.mnemonic.values 
+        for mnemonic in req_mnemonics
+    ):
+        if (
+            all(
+                mnemonic 
+                in df.mnemonic.values 
+                for mnemonic in ["LATI","LONG","GDAT"]
+            ) 
+            or
+            all(
+                mnemonic 
+                in df.mnemonic.values 
+                for mnemonic in ["X","Y","GDAT","HZCS"]
+            )
+        ):
+            country_code = df.loc[
+                df["mnemonic"] == "CTRY", 'value'
+            ].values[0].upper()
             if country_code in valid_country_codes:
                 if country_code == "CA":
-                    if all(mnemonic in df.mnemonic.values for mnemonic in ["PROV","UWI","LIC"]):
+                    if all(
+                        mnemonic 
+                        in df.mnemonic.values 
+                        for mnemonic in ["PROV","UWI","LIC"]
+                    ):
                         return True
                 elif country_code == "US":
-                    if all(mnemonic in df.mnemonic.values for mnemonic in ["PROV","UWI","LIC"]):
+                    if all(
+                        mnemonic 
+                        in df.mnemonic.values 
+                        for mnemonic in ["PROV","UWI","LIC"]
+                    ):
                         return True
             elif country_code == None or\
                 country_code == '':
@@ -879,41 +1050,42 @@ def validate_v3_well(df):
             else:
                 raise Exception(f"Invalid country code {country_code}")
         else:
-            raise Exception(f"Couldnt validate section, missing ('LATI','LONG','GDAT') or ('X','Y','GDAT','HZCS') items.")
+            raise Exception(
+                f"Couldnt validate section, missing ('LATI','LONG','GDAT') "
+                f"or ('X','Y','GDAT','HZCS') items."
+                )
     else:
-        raise Exception("Mssing required mnemonics.")
+        raise Exception("Missing required mnemonics.")
 
 def validate_well(df,version_num):
     """
-    Validates the well section of a DataFrame for 
-    specified LAS file versions.
+    Validates the well section of a DataFrame for specified LAS file 
+    versions.
 
-    This function calls either validate_v2_well or 
-    validate_v3_well depending on the version number 
-    provided. It verifies the DataFrame for the 
-    required structure according to the LAS version.
+    This function calls either validate_v2_well or validate_v3_well 
+    depending on the version number provided. It verifies the DataFrame 
+    for the required structure according to the LAS version.
 
     Parameters:
     ----------
     df : DataFrame
-        The DataFrame to be validated. This DataFrame 
-        should contain a 'mnemonic' column.
+        The DataFrame to be validated. This DataFrame should contain a 
+        'mnemonic' column.
 
     version_num : str
-        A string representing the LAS version. Valid 
-        values are "1.2", "2.0", and "3.0".
+        A string representing the LAS version. Valid values are "1.2", 
+        "2.0", and "3.0".
 
     Returns:
     -------
     bool:
-        Returns True if the DataFrame is valid for the 
-        well section of the given LAS version.
+        Returns True if the DataFrame is valid for the well section of 
+        the given LAS version.
 
     Raises:
     ------
     Exception:
-        If validation fails in the respective validate 
-        function.
+        If validation fails in the respective validate function.
     """
     if version_num == "1.2" or version_num =="2.0":
         try:
@@ -930,38 +1102,36 @@ def validate_well(df,version_num):
 
 def validate_parsed_section(name,type,parsed_section,version_num):
     """
-    Validates parsed sections from a LAS file depending 
-    on the section name, type and the file's version.
+    Validates parsed sections from a LAS file depending on the section 
+    name, type and the file's version.
 
-    This function checks the validity of parsed sections 
-    from a LAS file based on their name and type. 
-    It calls specific validation functions 
-    (validate_version, validate_well) for version and well 
+    This function checks the validity of parsed sections from a LAS 
+    file based on their name and type. It calls specific validation 
+    functions (validate_version, validate_well) for version and well 
     headers and checks for read_errors attribute in data section.
 
     Parameters:
     ----------
     name : str
-        Name of the section to be validated. For example 
-        'version', 'well', 'data'.
+        Name of the section to be validated. For example 'version', 
+        'well', 'data'.
 
     type : str
         Type of the section. For example 'header', 'data'.
 
     parsed_section : object
-        The parsed section which is to be validated. This 
-        could be a DataFrame or a LASData object.
+        The parsed section which is to be validated. This could be a 
+        DataFrame or a LASData object.
 
     version_num : str
-        The version of the LAS file. For example '1.2', 
-        '2.0', '3.0'.
+        The version of the LAS file. For example '1.2', '2.0', '3.0'.
 
     Returns:
     -------
     bool:
-        Returns True if the parsed section is valid according 
-        to the section's name, type, and LAS file's version.
-        Returns False otherwise.
+        Returns True if the parsed section is valid according to the 
+        section's name, type, and LAS file's version. Returns False 
+        otherwise.
     """
     if name == 'version' and type == 'header':
         return validate_version(parsed_section,version_num)
@@ -982,9 +1152,9 @@ class LASData():
     Class for storing and handling Log ASCII 
     Standard (LAS) data.
 
-    The class provides an interface to load, handle 
-    and validate LAS data. The LAS format is used
-    to store well log data in the oil and gas industry.
+    The class provides an interface to load, handle and validate LAS 
+    data. The LAS format is used to store well log data in the oil and 
+    gas industry.
 
     Attributes:
     ----------
@@ -995,28 +1165,24 @@ class LASData():
         The version of the LAS file.
 
     delimiter : str, optional
-        The delimiter used in the LAS data, such as 
-        SPACE, COMMA, or TAB.
-        Defaults to None, indicating a space delimiter.
+        The delimiter used in the LAS data, such as SPACE, COMMA, or 
+        TAB. Defaults to None, indicating a space delimiter.
 
     invalid_raise : bool, optional
-        Whether to raise an exception when invalid data 
-        is encountered.
+        Whether to raise an exception when invalid data is encountered.
         Defaults to False.
 
     unrecognized_delimiters : bool, optional
-        If True, any unrecognized delimiters are replaced 
-        with the default delimiter.
+        If True, any unrecognized delimiters are replaced with the 
+        default delimiter.
         Defaults to True.
 
     default_delimiter : str, optional
-        The default delimiter to use if an unrecognized 
-        delimiter is found.
-        Defaults to a space.
+        The default delimiter to use if an unrecognized delimiter is 
+        found. Defaults to a space.
 
     delimiter_error : str, optional
-        Stores an error message if an unrecognized 
-        delimiter is found.
+        Stores an error message if an unrecognized delimiter is found.
 
     data : numpy.ndarray
         The parsed LAS data, stored as a numpy array.
@@ -1025,8 +1191,7 @@ class LASData():
         The parsed LAS data, stored as a pandas DataFrame.
 
     read_errors : list, optional
-        Stores any read errors encountered when loading 
-        the data.
+        Stores any read errors encountered when loading the data.
 
     Methods:
     -------
@@ -1060,18 +1225,29 @@ class LASData():
             if default_delimiter in delim_dict.values():
                 delim = default_delimiter
             else:
-                self.delimiter_error = f"Unrecognized delimiter: '{self.delimiter}', and default delimiter '{default_delimiter} unable to load!"
+                self.delimiter_error = (
+                    f"Unrecognized delimiter: '{self.delimiter}', and default "
+                    f"delimiter '{default_delimiter} unable to load!"
+                )
         else:
             self.delimiter_error = f"Unrecognized delimiter: '{self.delimiter}', unable to load!"
             return
         with StringIO(self.raw_data) as f:
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
-                self.data = genfromtxt(f, delimiter=delim, invalid_raise=invalid_raise)
+                self.data = genfromtxt(
+                    f, 
+                    delimiter=delim, 
+                    invalid_raise=invalid_raise
+                )
                 self.df = DataFrame(self.data)
                 for warn in w:
                     if issubclass(warn.category, UserWarning):
-                        self.read_errors = [err for err in str(warn.message).split("\n")]
+                        self.read_errors = [
+                            err 
+                            for err 
+                            in str(warn.message).split("\n")
+                        ]
                         return
 
 class LASSection():
@@ -1091,12 +1267,10 @@ class LASSection():
         The raw data of the section as a string.
 
     type : str
-        The type of the section, either 'header', 
-        'data', or 'other'.
+        The type of the section, either 'header', 'data', or 'other'.
     
     version_num : str
-        The version number of the LAS file the 
-        section belongs to.
+        The version number of the LAS file the section belongs to.
 
     association : str, optional
         The association of the section. 
@@ -1107,8 +1281,8 @@ class LASSection():
         Defaults to None.
 
     parsed_section : obj, optional
-        The parsed section. This is populated when 
-        the section is parsed. 
+        The parsed section. This is populated when the section is 
+        parsed. 
 
     parsed : bool, optional
         Indicates whether the section has been parsed. 
@@ -1119,8 +1293,7 @@ class LASSection():
         Defaults to False.
 
     df : pandas.DataFrame
-        The DataFrame representing the parsed data of 
-        the section.
+        The DataFrame representing the parsed data of the section.
 
     Methods:
     -------
@@ -1132,20 +1305,20 @@ class LASSection():
         validate_on_init are set to True.
 
     __repr__(self)
-        Returns a string that represents the LASSection object 
-        in a way that can be used to recreate the object.
+        Returns a string that represents the LASSection object in a way 
+        that can be used to recreate the object.
 
     __str__(self)
-        Returns a user-friendly string representation of the 
-        LASSection object. 
+        Returns a user-friendly string representation of the LASSection 
+        object. 
 
     parse(self)
-        Parses the raw data into a usable format 
-        (not implemented in this code snippet).
+        Parses the raw data into a usable format (not implemented in 
+        this code snippet).
 
     validate(self)
-        Validates the parsed section 
-        (not implemented in this code snippet).
+        Validates the parsed section (not implemented in this code 
+        snippet).
 
     """
     def __init__(
@@ -1196,7 +1369,9 @@ class LASSection():
                         )
                         self.df = self.parsed_section
                     except Exception as e:
-                        self.parse_error = f"Couldn't parse '{self.name}' data: {str(e)}"
+                        self.parse_error = (
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
                         self.parse_tb = traceback.format_exc()
                         return
             # parse data section
@@ -1211,7 +1386,9 @@ class LASSection():
                         )
                         self.df = self.parsed_section.df
                     except Exception as e:
-                        self.parse_error = f"Couldn't parse '{self.name}' data: {str(e)}"
+                        self.parse_error = (
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
                         self.parse_tb = traceback.format_exc()
                         return
             # parse other section
@@ -1233,11 +1410,16 @@ class LASSection():
                         self.df = self.parsed_section.df
                         self.type = 'data'
                     except Exception as e:
-                        self.parse_error = f"Couldn't parse '{self.name}' data: {str(e)}"
+                        self.parse_error = (
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
                         self.parse_tb = traceback.format_exc()
                         return
             # validate section
-            if parse_on_init and validate_on_init and not hasattr(self,'parse_error'):
+            if (
+                parse_on_init and validate_on_init and 
+                not hasattr(self,'parse_error')
+            ):
                 try:
                     validation = validate_parsed_section(
                         self.name,
@@ -1247,16 +1429,24 @@ class LASSection():
                     )
                     self.validated = validation
                 except Exception as e:
-                    self.validate_error = Exception(f"Couldn't validate section {self.name}: {str(e)}")
+                    self.validate_error = Exception(
+                        f"Couldn't validate section {self.name}: {str(e)}"
+                    )
                     self.validate_tb = traceback.format_exc()
                     return
         # if raw data is only one line or less
         else:
-            self.parse_error = f"Couln't parse, raw data is only one line or less."
+            self.parse_error = (
+                "Couln't parse, raw data is only one line or "
+                "less."
+            )
             self.parse_tb = traceback.format_exc()
 
     def __repr__(self):
-        return f"LASSection(name={self.name!r}, type={self.type!r}, version_num={self.version_num!r})"
+        return (
+            f"LASSection(name={self.name!r}, type={self.type!r}, "
+            f"version_num={self.version_num!r})"
+        )
 
     def __str__(self):
         s = f"LASSection\n"
@@ -1287,20 +1477,18 @@ class LASSection():
 # Check for definition/curve and data column congruency
 def check_definitions_and_format_data(def_section,data_section):
     """
-    Checks the congruency between the definitions 
-    (header) and data sections of a LAS file and 
-    formats the data section accordingly.
+    Checks the congruency between the definitions (header) and data 
+    sections of a LAS file and formats the data section accordingly.
     
     Parameters:
     -----------
     def_section : LASSection
-        An instance of LASSection representing the 
-        definition section (usually the header) of 
-        a LAS file.
+        An instance of LASSection representing the definition section 
+        (usually the header) of a LAS file.
 
     data_section : LASSection
-        An instance of LASSection representing the 
-        data section of a LAS file.
+        An instance of LASSection representing the data section of a 
+        LAS file.
         
     Returns:
     --------
@@ -1308,11 +1496,10 @@ def check_definitions_and_format_data(def_section,data_section):
     
     Note:
     ----
-    If the number of rows in the definition section 
-    matches the number of columns in the data section, 
-    it renames the columns of the data section with the 
-    column names of the definition section. This operation 
-    modifies the data_section in-place.
+    If the number of rows in the definition section matches the number 
+    of columns in the data section, it renames the columns of the data 
+    section with the column names of the definition section. This 
+    operation modifies the data_section in-place.
     """
     def_rows = def_section.df.shape[0]
     print(def_rows)
@@ -1324,7 +1511,13 @@ def check_definitions_and_format_data(def_section,data_section):
         data_cols = data_section.df.shape[1]
         print(data_cols)
         if def_rows == data_cols:
-            data_section.df.rename(columns=dict(zip(data_section.df.columns,def_section.df.columns)),inplace=True)
+            data_section.df.rename(
+                columns=dict(zip(
+                        data_section.df.columns,
+                        def_section.df.columns
+                )),
+                inplace=True
+            )
 
 class LASFile():
     """
@@ -1340,12 +1533,11 @@ class LASFile():
         Path to the LAS file.
 
     sections : list[LASSection]
-        List of LASSection objects, each representing 
-        a different section of the LAS file.
+        List of LASSection objects, each representing a different 
+        section of the LAS file.
 
     version : LASSection
-        Section of the LAS file containing version 
-        information.
+        Section of the LAS file containing version information.
 
     version_num : str
         Version number of the LAS file.
@@ -1354,24 +1546,23 @@ class LASFile():
         Delimiter used in the LAS file.
 
     read_error : str
-        Error message generated if an error occurs while 
-        reading the file.
+        Error message generated if an error occurs while reading the 
+        file.
 
     parse_error : str
-        Error message generated if an error occurs while 
-        parsing the file.
+        Error message generated if an error occurs while parsing the 
+        file.
 
     parse_tb : str
-        Traceback information if an error occurs while 
-        parsing the file.
+        Traceback information if an error occurs while parsing the file.
 
     validate_error : str
-        Error message generated if an error occurs while 
-        validating the file.
+        Error message generated if an error occurs while validating the 
+        file.
 
     validate_tb : str
-        Traceback information if an error occurs while 
-        validating the file.
+        Traceback information if an error occurs while validating the 
+        file.
 
     Methods
     -------
@@ -1408,9 +1599,10 @@ class LASFile():
                         self.version_num = self.version.version_num
                         self.delimiter = self.version.delimiter
                         self.sections.append(self.version)
-                    # If a version couldn't be extracted, and the user has decided to 
-                    # always try to split the sections anyway set the version to None
-                    # otherwise return the LASFile object
+                    # If a version couldn't be extracted, and the user 
+                    # has decided to always try to split the sections 
+                    # anyway set the version to None otherwise return 
+                    # the LASFile object
                     except Exception as e:
                         self.version_error = f"Couldn't get version: {str(e)}"
                         tb = traceback.format_exc()
@@ -1423,52 +1615,98 @@ class LASFile():
                     # Try to split the file into sections
                     if self.version_num != None and self.version_num != '':
                         s = split_sections(data,self.version_num)
-                        if s['version'] != '' and s['version'] != None and s['well'] != '' and s['well'] != None:
+                        if (
+                            s['version'] != '' and s['version'] != None and 
+                            s['well'] != '' and s['well'] != None
+                        ):
                                 sections_dict = s
                         else:
-                            self.split_error = "Couldn't split into minimum required sections: Version and well sections are empty"
+                            self.split_error = (
+                                "Couldn't split into minimum required "
+                                "sections: Version and well sections are empty."
+                            )
                             if not always_try_split:
                                 return
                     elif always_try_split:
                         try:
                             s = split_sections(data,'2.0')
-                            if s['version'] != '' and s['version'] != None and s['well'] != '' and s['well'] != None:
+                            if (
+                                s['version'] != '' and s['version'] != None and 
+                                s['well'] != '' and s['well'] != None
+                            ):
                                 sections_dict = s
                             else:
-                                raise Exception("Tried version 2.0 split, but version and well sections are still empty")
+                                raise Exception(
+                                    "Tried version 2.0 split, but version and "
+                                    "well sections are still empty"
+                                    )
                         except Exception as e:
                             s = split_sections(data,'3.0')
-                            if s['version'] != '' and s['version'] != None and s['well'] != '' and s['well'] != None:
+                            if (
+                                s['version'] != '' and s['version'] != None and 
+                                s['well'] != '' and s['well'] != None
+                            ):
                                 sections_dict = s
                             else:
-                                self.split_error = f"Couldn't split into minimum required sections: {str(e)}"
+                                self.split_error = (
+                                    f"Couldn't split into minimum required "
+                                    f"sections: {str(e)}"
+                                )
                                 return
                     
-                    # If it split correctly generate las section items from the strings
+                    # If it split correctly generate las section items 
+                    # from the strings
                     try:
                         for name,raw_data in sections_dict.items():
-                            header_section_names = ['version','well','parameters','curves','core_parameters','core_definition','inc_parameters','inc_definition','drill_parameters','drill_definition','tops_parameters','tops_definition','test_parameters','test_definition']
+                            header_section_names = [
+                                'version',
+                                'well',
+                                'parameters',
+                                'curves',
+                                'core_parameters',
+                                'core_definition',
+                                'inc_parameters',
+                                'inc_definition',
+                                'drill_parameters',
+                                'drill_definition',
+                                'tops_parameters',
+                                'tops_definition',
+                                'test_parameters',
+                                'test_definition'
+                            ]
                             data_section_names = ['data']
                             if name == 'version':
                                 continue
-                            if name in header_section_names or '_parameters' in name or '_definition' in name:
+                            if (
+                                name in header_section_names or 
+                                '_parameters' in name or 
+                                '_definition' in name
+                            ):
                                 section_type = 'header'
                             elif name in data_section_names or '_data' in name:
                                 section_type = 'data'
                             else:
                                 section_type = ''
-                            section = LASSection(name,raw_data,section_type,self.version_num,)
+                            section = LASSection(
+                                name,
+                                raw_data,
+                                section_type,
+                                self.version_num,
+                                )
                             self.sections.append(section)
                         for section in self.sections:
                             setattr(self,section.name,section)
                     except Exception as e:
-                        self.section_load_error = f"Sections failed to load: {str(e)}"
+                        self.section_load_error = (
+                            f"Sections failed to load: {str(e)}"
+                        )
                         self.sections_dict = sections_dict
                         tb = traceback.format_exc()
                         self.section_load_tb = f"Sections failed to load: {tb}"
                         return
                     
-                    # If sections were built correctly, insure congruency between definition and data sections
+                    # If sections were built correctly, insure 
+                    # congruency between definition and data sections
                     self.validate_defs_and_data()
             except FileNotFoundError:
                 self.open_error = f"File not found: {self.file_path}"
@@ -1494,7 +1732,13 @@ class LASFile():
                     def_rows = self.curves.df.shape[0]
                     data_cols = self.data.df.shape[1]
                     if def_rows == data_cols:
-                        self.data.df.rename(columns=dict(zip(self.data.df.columns,self.curves.df.mnemonic.values)),inplace=True)
+                        self.data.df.rename(
+                            columns=dict(zip(
+                                    self.data.df.columns,
+                                    self.curves.df.mnemonic.values
+                            )),
+                            inplace=True
+                        )
 
     def __str__(self):
         s = f"LASFile: {self.file_path}\n"

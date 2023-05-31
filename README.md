@@ -18,13 +18,23 @@ las = lasfile.LASFile(file_path='path/to/file.las')
 las.sections
 ```
 ### View section data in LAS file
-#### As raw ascii text
+#### Using dot notation
+##### As raw ascii text
 ```python
 las.well.raw_data
 ```
-#### As pandas dataframe
+##### As pandas dataframe
 ```python
 las.well.df
+```
+#### Using dictionary notation
+##### As raw ascii text
+```python
+las['well']['raw_data']
+```
+##### As pandas dataframe
+```python
+las['well']['df']
 ```
 
 ## License
