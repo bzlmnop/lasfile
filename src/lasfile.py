@@ -875,7 +875,7 @@ def validate_version(df,version_num=None):
         if version_num == "1.2" or version_num == "2.0":
             try:
                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-            except:
+            except Exception as e:
                 raise Exception(f"Couldnt get VERS value: {str(e)}")
             try:
                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
@@ -888,7 +888,7 @@ def validate_version(df,version_num=None):
         elif version_num == "3.0":
             try:
                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-            except:
+            except Exception as e:
                 raise Exception(f"Couldnt get VERS value: {str(e)}")
             try:
                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
