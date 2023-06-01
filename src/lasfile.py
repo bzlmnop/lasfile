@@ -5,13 +5,9 @@ import traceback
 from io import StringIO
 from numpy import genfromtxt
 from pandas import DataFrame
-import json
-from os import path
-from pkgutil import get_data
-
 
 # Set known versions
-known_versions = ['1.2','2.0','3.0']
+known_versions = ['1.2', '2.0', '3.0']
 # Set known sections
 known_sections = {
     "1.2":
@@ -192,32 +188,123 @@ def get_version_num(
         allow_non_numeric=False,
         unknown_value=None
     ):
+    # """
+    # Extracts and validates the version number from the given data.
+
+    # This function accepts either a string containing a version section,
+    # or a DataFrame containing a mnemonic column with a "VERS" value.
+    # It then tries to extract the version number and validate it.
+    # It handles several common errors, such as non-numeric versions, and
+    # allows the acceptance of unknown versions.
+
+    # Parameters:
+    # ----------
+    # data : str or pandas.DataFrame
+    #     The input data to extract the version number from.
+    #     If a string, it should contain a version section marked with '~V'.
+    #     If a DataFrame, it should contain a column named 'mnemonic' with a
+    #     "VERS" value.
+
+    # handle_common_errors : bool, optional
+    #     Whether to handle common errors, such as whole number versions.
+    #     (default is True)
+
+    # accept_unknown_versions : bool, optional
+    #     Whether to accept and return unknown versions. (default is False)
+
+    # allow_non_numeric : bool, optional
+    #     Whether to allow and return non-numeric versions. This only works
+    #     if `accept_unknown_versions` is also True. (default is False)
+
+    # Returns:
+    # -------
+    # version_num : str
+    #     The extracted version number.
+
+    # Raises:
+    # ------
+    # ValueError:
+    #     If the input data is neither a string nor a DataFrame.
+
+    # Exception:
+    #     If the version number could not be retrieved, or if it
+    #     was not recognized and `accept_unknown_versions` is False.
+    # """
+    # if type(data) == str:
+    #     section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
+    #     section_list = re.findall(section_regex, data)
+    #     # print(f"section_list: {section_list}")
+    #     version_section = section_list[0]
+    #     # print(f"version_section: {version_section}")
+    #     df = parse_header_section(version_section)
+    #     # print(f"parsed_section: {results}")
+    #     try:
+    #         version_num = df.loc[df['mnemonic']=="VERS","value"].values[0]
+    #     except Exception as e:
+    #         raise Exception(f"couldnt get version: {str(e)}")
+    # elif type(data) == DataFrame:
+    #     df = data
+    #     try:
+    #         version_num = df.loc[df['mnemonic']=="VERS","value"].values[0]
+    #     except Exception as e:
+    #         raise Exception(f"Couldnt get version: {str(e)}")
+    # else:
+    #     raise ValueError("Input must be str or DataFrame.")
+    # if version_num in known_versions:
+    #     return version_num
+    # else:
+    #     if handle_common_errors:
+    #         # Try to convert to float
+    #         try:
+    #             float_version_num = str(float(version_num))
+    #             # Handle whole number version values
+    #             if str(float_version_num) in known_versions:
+    #                 version_num = str(float(version_num))
+    #                 return version_num
+    #             # Handle float version values with trailing zeros
+    #             elif float_version_num in known_versions:
+    #                 version_num = float_version_num
+    #                 return version_num
+    #         except Exception as e:
+    #             raise e
+    #     elif accept_unknown_versions:
+    #         try:
+    #             # Verify it is an integer and return it
+    #             float_version_num = float(version_num)
+    #             return version_num
+    #         except Exception as e:
+    #             if allow_non_numeric:
+    #                 return version_num
+    #     else:
+    #         raise Exception(
+    #             f"Couldnt get version, version number not recognized."
+    #         )
     """
     Extracts and validates the version number from the given data.
 
-    This function accepts either a string containing a version section, 
-    or a DataFrame containing a mnemonic column with a "VERS" value. 
-    It then tries to extract the version number and validate it. 
-    It handles several common errors, such as non-numeric versions, and 
-    allows the acceptance of unknown versions. 
+    This function accepts either a string containing a version section,
+    or a DataFrame containing a mnemonic column with a "VERS" value.
+    It then tries to extract the version number and validate it.
+    It handles several common errors, such as non-numeric versions, and
+    allows the acceptance of unknown versions.
 
     Parameters:
     ----------
     data : str or pandas.DataFrame
-        The input data to extract the version number from. 
-        If a string, it should contain a version section marked with '~V'. 
-        If a DataFrame, it should contain a column named 'mnemonic' with a 
+        The input data to extract the version number from.
+        If a string, it should contain a version section marked with '~V'.
+        If a DataFrame, it should contain a column named 'mnemonic' with a
         "VERS" value.
 
     handle_common_errors : bool, optional
-        Whether to handle common errors, such as whole number versions. 
+        Whether to handle common errors, such as whole number versions.
         (default is True)
 
     accept_unknown_versions : bool, optional
         Whether to accept and return unknown versions. (default is False)
 
     allow_non_numeric : bool, optional
-        Whether to allow and return non-numeric versions. This only works 
+        Whether to allow and return non-numeric versions. This only works
         if `accept_unknown_versions` is also True. (default is False)
 
     Returns:
@@ -231,58 +318,50 @@ def get_version_num(
         If the input data is neither a string nor a DataFrame.
 
     Exception:
-        If the version number could not be retrieved, or if it 
+        If the version number could not be retrieved, or if it
         was not recognized and `accept_unknown_versions` is False.
     """
-    if type(data) == str:
+    print(f"data: {data}")
+    # Parse input data based on its type
+    if isinstance(data, str):
         section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
-        section_list = re.findall(section_regex, data)
-        #print(f"section_list: {section_list}")
-        version_section = section_list[0]
-        #print(f"version_section: {version_section}")
+        version_section = re.findall(section_regex, data)[0]
         df = parse_header_section(version_section)
-        #print(f"parsed_section: {results}")
-        try:
-            version_num = df.loc[df['mnemonic']=="VERS","value"].values[0]
-        except Exception as e:
-            raise Exception(f"couldnt get version: {str(e)}")
-    elif type(data) == DataFrame:
+    elif isinstance(data, DataFrame):
         df = data
-        try:
-            version_num = df.loc[df['mnemonic']=="VERS","value"].values[0]
-        except Exception as e:
-            raise Exception(f"Couldnt get version: {str(e)}")
     else:
         raise ValueError("Input must be str or DataFrame.")
+
+    # Try to extract version number
+    try:
+        version_num = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
+    except Exception as e:
+        raise Exception(f"Could not get version: {str(e)}")
+
+    # Check if version number is known
     if version_num in known_versions:
         return version_num
-    else:
-        if handle_common_errors:
-            # Try to convert to float
-            try:
-                float_version_num = str(float(version_num))
-                # Handle whole number version values
-                if str(float_version_num) in known_versions:
-                    version_num = str(float(version_num))
-                    return version_num
-                # Handle float version values with trailing zeros
-                elif float_version_num in known_versions:
-                    version_num = float_version_num
-                    return version_num
-            except:
-                pass
-        elif accept_unknown_versions:
-            try:
-                # Verify it is an integer and return it
-                float_version_num = float(version_num)
+
+    # Handle common errors like conversion to float
+    if handle_common_errors:
+        try:
+            float_version_num = str(float(version_num))
+            if float_version_num in known_versions:
+                return float_version_num
+        except ValueError:
+            pass
+
+    # Accept unknown versions, verify if they are integers
+    if accept_unknown_versions:
+        try:
+            float(version_num)
+            return version_num
+        except ValueError:
+            if allow_non_numeric:
                 return version_num
-            except:
-                if allow_non_numeric:
-                    return version_num
-        else:
-            raise Exception(
-                f"Couldnt get version, version number not recognized."
-            )
+
+    raise Exception("Could not get version, version number not recognized.")
+
 
 def get_version_section(
         data,
