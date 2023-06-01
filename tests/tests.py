@@ -1,6 +1,6 @@
 import os
 import glob
-from lasfile import LASFile
+from src.lasfile import LASFile
 
 def get_test_las_paths():
     """Gets a list of las files in the test folder"""
