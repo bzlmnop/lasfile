@@ -258,10 +258,19 @@ def get_version_num(
         return version_num
     else:
         if handle_common_errors:
-            # Handle whole number version values
-            if str(float(version_num)) in known_versions:
-                version_num = str(float(version_num))
-                return version_num
+            # Try to convert to float
+            try:
+                float_version_num = str(float(version_num))
+                # Handle whole number version values
+                if str(float_version_num) in known_versions:
+                    version_num = str(float(version_num))
+                    return version_num
+                # Handle float version values with trailing zeros
+                elif float_version_num in known_versions:
+                    version_num = float_version_num
+                    return version_num
+            except:
+                pass
         elif accept_unknown_versions:
             try:
                 # Verify it is an integer and return it
