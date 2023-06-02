@@ -10,7 +10,7 @@ import warnings
 # Set known versions
 known_versions = ['1.2', '2.0', '3.0']
 # Set known sections
-known_sections = {
+known_secs = {
     "1.2":
     {
         "version":
@@ -492,7 +492,7 @@ def get_version_section(data,
 def parse_title_line(title_line,
                      version_num,
                      all_lowercase=True,
-                     associations=False):
+                     assocs=False):
     """
     Parses the title line based on the provided version number.
 
@@ -513,7 +513,7 @@ def parse_title_line(title_line,
         Whether to convert all characters in the title line to
         lowercase before parsing. (default is True)
 
-    associations : bool, optional
+    assocs : bool, optional
         Whether to consider associations in the parsing process.
         This is only relevant for version "3.0". (default is False)
 
@@ -535,7 +535,7 @@ def parse_title_line(title_line,
         return parse_v3_title(
             title_line,
             all_lowercase=all_lowercase,
-            associations=associations
+            assocs=assocs
         )
 
 
@@ -582,7 +582,7 @@ def parse_v2_title(title_line, all_lowercase=True):
         )
 
 
-def parse_v3_title(title_line, all_lowercase=True, associations=False):
+def parse_v3_title(title_line, all_lowercase=True, assocs=False):
     """
     Parses a version 3.0 title line.
 
@@ -600,7 +600,7 @@ def parse_v3_title(title_line, all_lowercase=True, associations=False):
         Whether to convert the section title and association to
         lowercase. (default is True)
 
-    associations : bool, optional
+    assocs : bool, optional
         Whether to consider associations in the parsing process.
         (default is False)
 
@@ -616,7 +616,7 @@ def parse_v3_title(title_line, all_lowercase=True, associations=False):
     Exception:
         If the title line does not begin with '~'.
     """
-    has_association = False
+    has_assoc = False
     # Strip leading and trailing whitespace
     title_line = title_line.strip()
     # Check if it actually is a title line
@@ -626,15 +626,15 @@ def parse_v3_title(title_line, all_lowercase=True, associations=False):
         # Check if there is an association
         if '|' in title_line:
             # If so, split the title line into the title and association
-            has_association = True
-            title_line, association = title_line.split('|')
+            has_assoc = True
+            title_line, assoc = title_line.split('|')
             # If the association is not empty, strip leading and
             # trailing whitespace
-            if association.strip().split(' ')[0] != '':
-                association = association.strip().split(' ')[0]
+            if assoc.strip().split(' ')[0] != '':
+                assoc = assoc.strip().split(' ')[0]
             # Otherwise, set the association to None
             else:
-                association = None
+                assoc = None
         # Extract the section title
         if title_line.split(' ')[0] != '':
             section_title = title_line.split(' ')[0]
@@ -643,11 +643,11 @@ def parse_v3_title(title_line, all_lowercase=True, associations=False):
         # Convert to lowercase if requested
         if all_lowercase:
             section_title = section_title.lower()
-            if associations and has_association:
-                association.lower()
+            if assocs and has_assoc:
+                assoc.lower()
         # Return the section title and association if requested
-        if associations and has_association:
-            return section_title, association
+        if assocs and has_assoc:
+            return section_title, assoc
         # Otherwise, just return the section title
         else:
             return section_title
@@ -659,7 +659,7 @@ def parse_v3_title(title_line, all_lowercase=True, associations=False):
         )
 
 
-def split_sections(data, version_num, known_sections=known_sections):
+def split_sections(data, version_num, known_secs=known_secs):
     """
     Splits the input data into sections based on the
     provided version number.
@@ -680,10 +680,10 @@ def split_sections(data, version_num, known_sections=known_sections):
         The version number, which determines how the
         data is split. Can be "1.2", "2.0", or "3.0".
 
-    known_sections : dict, optional
+    known_secs : dict, optional
         A dictionary mapping known section names to
         their details for each version.
-        (default is known_sections)
+        (default is known_secs)
 
     Returns:
     -------
@@ -731,8 +731,8 @@ def split_sections(data, version_num, known_sections=known_sections):
         # Store the sections in a dictionary
         section_dict = {}
         # Get the known sections for version 3.0
-        known_sections = known_sections["3.0"]
-        known_section_names = known_sections.keys()
+        known_secs = known_secs["3.0"]
+        known_sec_names = known_secs.keys()
         for section in sections:
             # Get the title line/header of the section
             section_found = False
@@ -746,16 +746,16 @@ def split_sections(data, version_num, known_sections=known_sections):
             )
             # If the section title is a known section name, store it
             # using the known section name as the key
-            if section_title in known_section_names:
+            if section_title in known_sec_names:
                 section_dict[section_title] = section.strip()
                 section_found = True
             # If the section title is not a known section name, check
             # if it is an alias for a known section name then store it
             # using the known section name as the key
             else:
-                for known_section_name, known_section in known_sections.items():
-                    if section_title in known_section["titles"]:
-                        section_dict[known_section_name] = section.strip()
+                for known_sec_name, known_sec in known_secs.items():
+                    if section_title in known_sec["titles"]:
+                        section_dict[known_sec_name] = section.strip()
                         section_found = True
                 if not section_found:
                     section_dict[section_title] = section.strip()
@@ -828,20 +828,20 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
             # Get the description.
             # The description is everything after the last colon,
             # stripped of whitespace.
-            description = line_aft_frst_prd[lst_col+1:].strip()
+            descr = line_aft_frst_prd[lst_col+1:].strip()
             results.append(
                 {
                     "mnemonic": mnemonic,
                     "units": units if units != "" else None,
                     "value": value if value != "" else None,
-                    "description": description if description != "" else None
+                    "description": descr if descr != "" else None
                 }
             )
         return DataFrame(results)
     if version_num == '3.0':
         for line in lines:
             format = None
-            associations = None
+            assocs = None
             # Skip comment, title, and empty lines
             if (
                 line.strip().startswith("#") or
@@ -874,28 +874,28 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
             line_aft_lst_col = line_aft_frst_prd[lst_col+1:]
             if '{' in line_aft_lst_col and '}' in line_aft_lst_col:
                 frst_brc_aft_lst_col = line_aft_lst_col.index('{')
-                description = line_aft_lst_col[:frst_brc_aft_lst_col]
+                descr = line_aft_lst_col[:frst_brc_aft_lst_col]
                 line_aft_frst_brc = line_aft_lst_col[frst_brc_aft_lst_col+1:]
                 clsng_brc = line_aft_frst_brc.rindex('}')
                 format = line_aft_frst_brc[:clsng_brc].strip()
                 line_aft_clsng_brc = line_aft_frst_brc[clsng_brc+1:]
                 if '|' in line_aft_clsng_brc:
                     bar = line_aft_clsng_brc.index('|')
-                    associations = line_aft_clsng_brc[bar+1:].strip()
+                    assocs = line_aft_clsng_brc[bar+1:].strip()
             elif '|' in line_aft_lst_col:
                 bar = line_aft_lst_col.index('|')
-                associations = line_aft_lst_col[bar+1:].strip()
+                assocs = line_aft_lst_col[bar+1:].strip()
             else:
-                description = line_aft_frst_prd[lst_col+1:].strip()
+                descr = line_aft_frst_prd[lst_col+1:].strip()
             # Add the parsed values to the results list
             results.append(
                 {
                     "mnemonic": mnemonic,
                     "units": units if units != "" else None,
                     "value": value if value != "" else None,
-                    "description": description if description != "" else None,
+                    "description": descr if descr != "" else None,
                     "format": format if format != "" else None,
-                    "associations": associations if associations != "" else None
+                    "associations": assocs if assocs != "" else None
                 }
             )
         # Return the results as a DataFrame
@@ -936,6 +936,92 @@ def parse_data_section(raw_data, version_num, delimiter=None):
     return loaded_data
 
 
+# def validate_version(df, version_num=None):
+#     """
+#     Validates the version of a dataframe.
+
+#     This function checks if the dataframe contains all required
+#     mnemonics for the given version number and verifies the values of
+#     these mnemonics. The specific checks differ based on the version
+#     number.
+
+#     Parameters:
+#     ----------
+#     df : DataFrame
+#         The dataframe to be validated. This dataframe should contain a
+#         'mnemonic' column and a 'value' column.
+
+#     version_num : str, optional
+#         The version number of the dataframe. Must be either "1.2",
+#         "2.0", or "3.0". If not provided, the function will use the
+#         value in the dataframe.
+
+#     Returns:
+#     -------
+#     bool:
+#         Returns True if the dataframe is valid for the given version
+#         number.
+
+#     Raises:
+#     ------
+#     Exception:
+#         If any of the required mnemonics are missing or have invalid
+#         values, or if the version number is not one of the expected
+#         values ("1.2", "2.0", "3.0").
+#     """
+#     if version_num == "1.2" or version_num == "2.0":
+#         req_mnemonics = [
+#             "VERS",
+#             "WRAP"
+#         ]
+#     elif version_num == "3.0":
+#         req_mnemonics = [
+#             "VERS",
+#             "WRAP",
+#             "DLM"
+#         ]
+#     if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
+#         if version_num == "1.2" or version_num == "2.0":
+#             try:
+#                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
+#             except Exception as e:
+#                 raise Exception(f"Couldnt get VERS value: {str(e)}")
+#             try:
+#                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
+#             except Exception as e:
+#                 raise Exception(f"Couldnt get WRAP value: {str(e)}")
+#             if wrap.upper() in ["YES", "NO"]:
+#                 return True
+#             else:
+#                 raise Exception("Wrap value must be 'YES' or 'NO'.")
+#         elif version_num == "3.0":
+#             try:
+#                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
+#             except Exception as e:
+#                 raise Exception(f"Couldnt get VERS value: {str(e)}")
+#             try:
+#                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
+#             except Exception as e:
+#                 raise Exception(f"Couldnt get WRAP value: {str(e)}")
+#             try:
+#                 dlm = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
+#             except Exception as e:
+#                 raise Exception(f"Couldnt get DLM value: {str(e)}")
+#             if wrap.upper() in ["NO"]:
+#                 if dlm.upper() in ["SPACE", "COMMA", "TAB"]:
+#                     return True
+#                 elif dlm is None or dlm == '':
+#                     return True
+#                 else:
+#                     raise Exception("Unrecognized delimiter.")
+#             else:
+#                 raise Exception("Wrap value must be 'NO'.")
+#         else:
+#             raise Exception("Only accepts version 1.2, 2.0, and 3.0")
+#     else:
+#         raise Exception("Missing required version section mnemonic.")
+
+
 def validate_version(df, version_num=None):
     """
     Validates the version of a dataframe.
@@ -969,57 +1055,37 @@ def validate_version(df, version_num=None):
         values, or if the version number is not one of the expected
         values ("1.2", "2.0", "3.0").
     """
-    if version_num == "1.2" or version_num == "2.0":
-        req_mnemonics = [
-            "VERS",
-            "WRAP"
-        ]
+    if version_num in ["1.2", "2.0"]:
+        req_mnemonics = ["VERS", "WRAP"]
     elif version_num == "3.0":
-        req_mnemonics = [
-            "VERS",
-            "WRAP",
-            "DLM"
-        ]
-    if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-        if version_num == "1.2" or version_num == "2.0":
-            try:
-                vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-            except Exception as e:
-                raise Exception(f"Couldnt get VERS value: {str(e)}")
-            try:
-                wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
-            except Exception as e:
-                raise Exception(f"Couldnt get WRAP value: {str(e)}")
-            if wrap.upper() in ["YES", "NO"]:
-                return True
-            else:
-                raise Exception("Wrap value must be 'YES' or 'NO'.")
-        elif version_num == "3.0":
-            try:
-                vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-            except Exception as e:
-                raise Exception(f"Couldnt get VERS value: {str(e)}")
-            try:
-                wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
-            except Exception as e:
-                raise Exception(f"Couldnt get WRAP value: {str(e)}")
-            try:
-                dlm = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
-            except Exception as e:
-                raise Exception(f"Couldnt get DLM value: {str(e)}")
-            if wrap.upper() in ["NO"]:
-                if dlm.upper() in ["SPACE", "COMMA", "TAB"]:
-                    return True
-                elif dlm is None or dlm == '':
-                    return True
-                else:
-                    raise Exception("Unrecognized delimiter.")
-            else:
-                raise Exception("Wrap value must be 'NO'.")
-        else:
-            raise Exception("Only accepts version 1.2, 2.0, and 3.0")
+        req_mnemonics = ["VERS", "WRAP", "DLM"]
     else:
+        raise Exception("Only accepts version 1.2, 2.0, and 3.0")
+
+    if not all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
         raise Exception("Missing required version section mnemonic.")
+
+    try:
+        wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
+    except Exception as e:
+        raise Exception(f"Couldnt get WRAP value: {str(e)}")
+
+    if version_num == "3.0":
+        try:
+            dlm = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
+        except Exception as e:
+            raise Exception(f"Couldnt get DLM value: {str(e)}")
+        if (
+            wrap.upper() not in ["NO"] or
+            dlm.upper() not in ["SPACE", "COMMA", "TAB", None, '']
+        ):
+            raise Exception("Invalid wrap or delimiter value for version 3.0")
+    elif wrap.upper() not in ["YES", "NO"]:
+        raise Exception(
+            "Wrap value for versions 1.2 and 2.0 must be 'YES' or 'NO'."
+        )
+
+    return True
 
 
 def validate_v2_well(df):
@@ -1401,7 +1467,7 @@ class LASSection():
     version_num : str
         The version number of the LAS file the section belongs to.
 
-    association : str, optional
+    assoc : str, optional
         The association of the section.
         Defaults to None.
 
@@ -1427,7 +1493,7 @@ class LASSection():
     Methods:
     -------
     __init__(self, name, raw_data, section_type, version_num,
-    association=None, delimiter=None, parse_on_init=True,
+    assoc=None, delimiter=None, parse_on_init=True,
     validate_on_init=True)
         Initializes the LASSection object, parses the raw data,
         validates the parsed section if parse_on_init and
@@ -1456,7 +1522,7 @@ class LASSection():
         raw_data,
         section_type,
         version_num,
-        association=None,
+        assoc=None,
         delimiter=None,
         parse_on_init=True,
         validate_on_init=True,
@@ -1467,7 +1533,7 @@ class LASSection():
         self.raw_data = raw_data
         self.type = section_type
         self.version_num = version_num
-        self.assocation = association
+        self.assocation = assoc
         self.delimiter = delimiter
         self.validated = False
         self.wrap = wrap
@@ -1481,7 +1547,7 @@ class LASSection():
                     title_line,
                     version_num=self.version_num,
                     all_lowercase=True,
-                    associations=True
+                    assocs=True
                 )
                 if type(result) != str:
                     self.association = result[1]
