@@ -1597,7 +1597,7 @@ class LASSection():
                         )
                     self.df = self.parsed_section
                     self.type = 'header'
-                except Exception as e:
+                except Exception:
                     try:
                         self.parsed_section = parse_data_section(
                             self.raw_data,
