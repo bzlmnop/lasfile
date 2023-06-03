@@ -1,6 +1,6 @@
 import os
 import glob
-from src.lasfile import LASFile
+from src.lasfile.lasfile import LASFile
 
 
 def get_test_las_paths():
