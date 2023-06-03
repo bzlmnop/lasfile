@@ -13,7 +13,7 @@ import warnings
 known_versions = ['1.2', '2.0', '3.0']
 # Set known sections from json file
 dir_path = os.path.dirname(os.path.realpath(__file__))
-known_secs_path = os.path.join(dir_path, './json/known_sections.json')
+known_secs_path = os.path.join(dir_path, '../json/known_sections.json')
 
 with open(known_secs_path, 'r') as f:
     known_secs = json.load(f)

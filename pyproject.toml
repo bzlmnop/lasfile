@@ -21,3 +21,6 @@ homepage = "https://github.com/bzlmnop/lasfile"
 
 [project.scripts]
 lasfile = "lasfile.__main__:main"
+
+[options]
+include_package_data = True
