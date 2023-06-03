@@ -1,6 +1,7 @@
 # A python module for reading LAS files
 
 import json
+import os
 import re
 import traceback
 from io import StringIO
@@ -11,8 +12,11 @@ import warnings
 # Set known versions
 known_versions = ['1.2', '2.0', '3.0']
 # Set known sections from json file
-known_secs_path = "./json/known_sections.json"
-known_secs = json.loads(open(known_secs_path).read())
+dir_path = os.path.dirname(os.path.realpath(__file__))
+known_secs_path = os.path.join(dir_path, './json/known_sections.json')
+
+with open(known_secs_path, 'r') as f:
+    known_secs = json.load(f)
 
 
 def get_version_num(data,
