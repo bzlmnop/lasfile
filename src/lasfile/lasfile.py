@@ -8,6 +8,7 @@ from io import StringIO
 from numpy import genfromtxt
 from pandas import DataFrame
 import warnings
+from apinum import APINumber
 
 # Set known versions
 known_versions = ['1.2', '2.0', '3.0']
@@ -1797,3 +1798,38 @@ class LASFile():
             for section in self.sections:
                 s += str(f"  {section}")
         return s
+
+
+def read(fp):
+    """
+    Read a LAS file and return a LASFile object
+
+    Parameters
+    ----------
+    las_file : str
+        Path to the LAS file
+
+    Returns
+    -------
+    LASFile object
+    """
+    return LASFile(file_path=fp)
+
+
+def api_from_las(input):
+    # If the input is a string, assume it's a file path
+    if is
+    # If the input is a LASFile object, return the API or UWI from it
+    if isinstance(input, LASFile):
+        if hasattr(input, 'well'):
+            if hasattr(input.well, 'api') or hasattr(input.well, 'API'):
+                # Attempt to load the api into an APINumber object
+                try:
+                    return APINumber(input.well.api.value)
+                except Exception as e:
+                    raise e
+            elif hasattr(input.well, 'uwi') or hasattr(input.well, 'UWI'):
+                return input.well.uwi.value
+        else:
+            return None
+        
