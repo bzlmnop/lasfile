@@ -1817,19 +1817,25 @@ def read(fp):
 
 
 def api_from_las(input):
-    # If the input is a string, assume it's a file path
-    if is
+    # If the input is a string, assume it's a file path and try to read
+    # it into a LASFile object
+    if isinstance(input, str):
+        try:
+            las = read(input)
+        except Exception as e:
+            raise e
     # If the input is a LASFile object, return the API or UWI from it
     if isinstance(input, LASFile):
-        if hasattr(input, 'well'):
-            if hasattr(input.well, 'api') or hasattr(input.well, 'API'):
-                # Attempt to load the api into an APINumber object
-                try:
-                    return APINumber(input.well.api.value)
-                except Exception as e:
-                    raise e
-            elif hasattr(input.well, 'uwi') or hasattr(input.well, 'UWI'):
-                return input.well.uwi.value
-        else:
-            return None
-        
+        las = input
+    # If the las has a well section, try to get the api from it
+    if hasattr(las, 'well'):
+        if hasattr(las.well, 'api') or hasattr(las.well, 'API'):
+            # Attempt to load the api into an APINumber object
+            try:
+                return APINumber(las.well.api.value)
+            except Exception as e:
+                raise e
+        elif hasattr(las.well, 'uwi') or hasattr(las.well, 'UWI'):
+            return las.well.uwi.value
+    else:
+        return None

@@ -1,6 +1,6 @@
 import os
 import glob
-from src.lasfile.lasfile import LASFile
+from src.lasfile.lasfile import LASFile, api_from_las
 
 
 def get_test_las_paths():
@@ -60,4 +60,12 @@ def test_read_las():
                 assert 'validate_error' not in vars(section).keys()
 
 
+def test_api_from_las():
+    """Tests that the API can be calculated from a las file"""
+    for las_path in get_test_las_paths():
+        # try the file paths
+        assert api_from_las(las_path) is not None
+
+
 test_read_las()
+test_api_from_las()

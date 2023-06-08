@@ -16,7 +16,7 @@
  SRVC.     SERVICE COMPANY:   ANY LOGGING COMPANY INC.
  SON .     SERVICE ORDER #:   142085
  DATE.            LOG DATE:   13-DEC-86
- UWI .      UNIQUE WELL ID:
+ UWI .      UNIQUE WELL ID:   30015992240000
 ~Curve Information
 #MNEM.UNIT      API CODE      Curve Description
 #---------    -------------   ------------------------------

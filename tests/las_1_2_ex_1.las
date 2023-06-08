@@ -15,7 +15,8 @@
  PROV.            PROVINCE:   SASKATCHEWAN
  SRVC.     SERVICE COMPANY:   ANY LOGGING COMPANY LTD.
  DATE.            LOG DATE:   25-DEC-1988
- UWI .      UNIQUE WELL ID:   100091604920W300
+ UWI .      UNIQUE WELL ID:   460010351200
+ API .          API Number:   460010351200
 ~CURVE INFORMATION
 #MNEM.UNIT      API CODE      CURVE DESCRIPTION
 #---------    -------------   ------------------------------

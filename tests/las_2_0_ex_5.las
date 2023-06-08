@@ -15,7 +15,7 @@ PROV. ALBERTA :Province / County
 CTRY. CANADA :State / Country
 LOC. 100/10-16-039-03W5/00 :Location
 SRVC. Weatherford :Service company
-UWI. 100101603903W500 :Unique Well Id
+UWI. 01-007-01053 :Unique Well Id
 LIC. 0323470 :Licence Number
 DATE. 25-Jul-2008 :Logging date
 #
