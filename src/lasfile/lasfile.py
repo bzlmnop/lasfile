@@ -1824,18 +1824,41 @@ def api_from_las(input):
             las = read(input)
         except Exception as e:
             raise e
-    # If the input is a LASFile object, return the API or UWI from it
-    if isinstance(input, LASFile):
+    elif isinstance(input, LASFile):
         las = input
     # If the las has a well section, try to get the api from it
     if hasattr(las, 'well'):
-        if hasattr(las.well, 'api') or hasattr(las.well, 'API'):
-            # Attempt to load the api into an APINumber object
-            try:
-                return APINumber(las.well.api.value)
-            except Exception as e:
-                raise e
-        elif hasattr(las.well, 'uwi') or hasattr(las.well, 'UWI'):
-            return las.well.uwi.value
+        try:
+            # Check if 'UWI', 'uwi', 'API', or 'api' is present in the 'mnemonic' column
+            mask = las.well.df['mnemonic'].str.lower().isin(['uwi', 'api'])
+
+            # Filter the DataFrame using the mask
+            filtered_df = las.well.df[mask]
+
+            # Get the corresponding values for the matched mnemonics
+            matched_values = filtered_df['value'].tolist()
+
+            # Attempt to load all matched values into an APINumber objects
+            valid_values = []
+            for value in matched_values:
+                try:
+                    valid_values.append(APINumber(value))
+                except Exception:
+                    pass
+
+            # if there are matched values, check if they have the same
+            # first 10 characters
+            if len(valid_values) > 0:
+                if all(
+                    x.unformatted_10_digit == valid_values[0].unformatted_10_digit
+                    for x in valid_values
+                ):
+                    return APINumber(matched_values[0])
+                else:
+                    # If they don't have the same first 10 characters,
+                    # return the longest valid_value as an APINumber
+                    return APINumber(max(valid_values, key=len))
+        except Exception as e:
+            raise e
     else:
         return None
