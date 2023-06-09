@@ -650,30 +650,70 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
             # stripped of whitespace.
             frst_prd = line.index('.')
             mnemonic = line[:frst_prd].strip()
-            # Get the units.
-            # The units are everything between the first period
-            # and the first space after the first period, stripped
-            # of whitespace.
-            line_aft_frst_prd = line[frst_prd+1:]
-            frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
-            units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
-            # Get the value.
-            # The value is everything between the first space after
-            # the first period and the last colon, stripped of whitespace.
-            lst_col = line_aft_frst_prd.rindex(':')
-            value = line_aft_frst_prd[frst_spc_aft_frst_prd:lst_col].strip()
-            # Get the description.
-            # The description is everything after the last colon,
-            # stripped of whitespace.
-            descr = line_aft_frst_prd[lst_col+1:].strip()
-            results.append(
-                {
-                    "mnemonic": mnemonic,
-                    "units": units if units != "" else None,
-                    "value": value if value != "" else None,
-                    "description": descr if descr != "" else None
-                }
-            )
+            if version_num == '1.2' and mnemonic in [
+                'COMP',
+                'WELL',
+                'FLD',
+                'LOC',
+                'PROV',
+                'SRVC',
+                'DATE',
+                'UWI',
+                'API',
+            ]:
+                # Get the units.
+                # The units are everything between the first period
+                # and the first space after the first period, stripped
+                # of whitespace.
+                line_aft_frst_prd = line[frst_prd+1:]
+                frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+                units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+                # Get the value.
+                # The value is everything between the first space after
+                # the first period and the last colon, stripped of whitespace.
+                lst_col = line_aft_frst_prd.rindex(':')
+                descr = line_aft_frst_prd[
+                    frst_spc_aft_frst_prd:lst_col
+                ].strip()
+                # Get the description.
+                # The description is everything after the last colon,
+                # stripped of whitespace.
+                value = line_aft_frst_prd[lst_col+1:].strip()
+                results.append(
+                    {
+                        "mnemonic": mnemonic,
+                        "units": units if units != "" else None,
+                        "value": value if value != "" else None,
+                        "description": descr if descr != "" else None
+                    }
+                )
+            else:
+                # Get the units.
+                # The units are everything between the first period
+                # and the first space after the first period, stripped
+                # of whitespace.
+                line_aft_frst_prd = line[frst_prd+1:]
+                frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+                units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+                # Get the value.
+                # The value is everything between the first space after
+                # the first period and the last colon, stripped of whitespace.
+                lst_col = line_aft_frst_prd.rindex(':')
+                value = line_aft_frst_prd[
+                    frst_spc_aft_frst_prd:lst_col
+                ].strip()
+                # Get the description.
+                # The description is everything after the last colon,
+                # stripped of whitespace.
+                descr = line_aft_frst_prd[lst_col+1:].strip()
+                results.append(
+                    {
+                        "mnemonic": mnemonic,
+                        "units": units if units != "" else None,
+                        "value": value if value != "" else None,
+                        "description": descr if descr != "" else None
+                    }
+                )
         return DataFrame(results)
     if version_num == '3.0':
         for line in lines:
@@ -1826,15 +1866,17 @@ def api_from_las(input):
             raise e
     elif isinstance(input, LASFile):
         las = input
+    print(las.file_path)
     # If the las has a well section, try to get the api from it
     if hasattr(las, 'well'):
         try:
-            # Check if 'UWI', 'uwi', 'API', or 'api' is present in the 'mnemonic' column
+            # Check if 'UWI', 'uwi', 'API', or 'api' is present in the
+            # 'mnemonic' column
             mask = las.well.df['mnemonic'].str.lower().isin(['uwi', 'api'])
-
+            print(mask)
             # Filter the DataFrame using the mask
             filtered_df = las.well.df[mask]
-
+            print(filtered_df)
             # Get the corresponding values for the matched mnemonics
             matched_values = filtered_df['value'].tolist()
 
@@ -1850,7 +1892,7 @@ def api_from_las(input):
             # first 10 characters
             if len(valid_values) > 0:
                 if all(
-                    x.unformatted_10_digit == valid_values[0].unformatted_10_digit
+                    x.unformatted_10_digit == valid_values[0].unformatted_10_digit  # noqa: E501
                     for x in valid_values
                 ):
                     return APINumber(matched_values[0])
@@ -1858,6 +1900,8 @@ def api_from_las(input):
                     # If they don't have the same first 10 characters,
                     # return the longest valid_value as an APINumber
                     return APINumber(max(valid_values, key=len))
+            else:
+                return None
         except Exception as e:
             raise e
     else:
