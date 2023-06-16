@@ -1866,17 +1866,17 @@ def api_from_las(input):
             raise e
     elif isinstance(input, LASFile):
         las = input
-    print(las.file_path)
+    # print(las.file_path)
     # If the las has a well section, try to get the api from it
     if hasattr(las, 'well'):
         try:
             # Check if 'UWI', 'uwi', 'API', or 'api' is present in the
             # 'mnemonic' column
             mask = las.well.df['mnemonic'].str.lower().isin(['uwi', 'api'])
-            print(mask)
+            # print(mask)
             # Filter the DataFrame using the mask
             filtered_df = las.well.df[mask]
-            print(filtered_df)
+            # print(filtered_df)
             # Get the corresponding values for the matched mnemonics
             matched_values = filtered_df['value'].tolist()
 
