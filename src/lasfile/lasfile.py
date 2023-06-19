@@ -1576,14 +1576,14 @@ def check_definitions_and_format_data(def_section, data_section):
     operation modifies the data_section in-place.
     """
     def_rows = def_section.df.shape[0]
-    print(def_rows)
+    # print(def_rows)
     data_cols = data_section.df.shape[1]
-    print(data_cols)
+    # print(data_cols)
     if hasattr(def_section, 'df') and hasattr(data_section, 'df'):
         def_rows = def_section.df.shape[0]
-        print(def_rows)
+        # print(def_rows)
         data_cols = data_section.df.shape[1]
-        print(data_cols)
+        # print(data_cols)
         if def_rows == data_cols:
             data_section.df.rename(
                 columns=dict(zip(
