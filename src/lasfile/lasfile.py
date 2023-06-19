@@ -1803,7 +1803,10 @@ class LASFile():
     def validate_defs_and_data(self):
         # Find data sections
         for section in self.sections:
+            # Check if the section is a standard data section
             if section.name == 'data' and section.type == 'data':
+                # Check that the curves and data sections were parsed
+                # correctly into dataframes
                 if hasattr(self.curves, 'df') and hasattr(self.data, 'df'):
                     # The related definition section should be 'curves'
                     # so, get the rows/cols
@@ -1816,6 +1819,10 @@ class LASFile():
                                     self.curves.df.mnemonic.values
                             )),
                             inplace=True
+                        )
+                    else:
+                        self.validate_error = (
+                            "Curves and data sections are not congruent."
                         )
 
     def __str__(self):
@@ -1832,8 +1839,8 @@ class LASFile():
             s += f"Section Loading Error: {self.section_load_error}\n"
             if hasattr(self, 'section_load_tb'):
                 s += f"Section Loading Traceback:\n{self.section_load_tb}"
-        if hasattr(self, 'validation_error'):
-            s += f"Validation Error: {self.validation_error}"
+        if hasattr(self, 'validate_error'):
+            s += f"Validation Error: {self.validate_error}"
         if hasattr(self, 'sections'):
             for section in self.sections:
                 s += str(f"  {section}")
