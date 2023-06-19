@@ -1812,6 +1812,10 @@ class LASFile():
                     # so, get the rows/cols
                     def_rows = self.curves.df.shape[0]
                     data_cols = self.data.df.shape[1]
+                    # If the number of rows/curve definitions in the
+                    # definition section matches the number of columns
+                    # in the data section, rename the columns of the
+                    # data section to the curve mnemonics
                     if def_rows == data_cols:
                         self.data.df.rename(
                             columns=dict(zip(
@@ -1820,9 +1824,20 @@ class LASFile():
                             )),
                             inplace=True
                         )
+                    # If the number of rows/curve definitions in the
+                    # definition section does not match the number of
+                    # columns in the data section, set a validation
+                    # error
                     else:
                         self.validate_error = (
                             "Curves and data sections are not congruent."
+                        )
+                    # Check if there are repeated curve mnemonics in the
+                    # definition section and if there are, set the
+                    # validation error
+                    if len(self.curves.df.mnemonic.unique()) != def_rows:
+                        self.validate_error = (
+                            "Curve mnemonics are not unique."
                         )
 
     def __str__(self):
