@@ -290,7 +290,7 @@ def get_version_section(data,
         raise Exception("Could not validate version section.")
 
     try:
-        wrap_val = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
+        wrap_val = df.loc[df['mnemonic'].upper() == "WRAP", "value"].values[0]
         if wrap_val.upper() == 'YES':
             wrap = True
         elif wrap_val.upper() == 'NO':
