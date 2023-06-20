@@ -939,8 +939,17 @@ def validate_version(df, version_num=None):
     else:
         raise Exception("Only accepts version 1.2, 2.0, and 3.0")
 
+    # Test if all required mnemonics are present
     if not all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-        raise Exception("Missing required version section mnemonic.")
+        # Try and fix the missing mnemonic error by adjusting mnemonic
+        # case to upper.
+        if not all(
+            mnemonic in [val.upper() for val in df.mnemonic.values]
+            for mnemonic in req_mnemonics
+        ):
+            raise Exception("Missing required version section mnemonic.")
+        else:
+            return True
 
     try:
         wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
@@ -1170,6 +1179,15 @@ def validate_well(df, version_num):
             raise e
 
 
+def validate_curves(df, version_num):
+    if version_num == "1.2" or version_num == "2.0" or version_num == "3.0":
+        # Check that there are no repeated mnemonics
+        if len(df.mnemonic.unique()) == len(df.mnemonic):
+            return True
+        else:
+            return False
+
+
 def validate_parsed_section(name, type, parsed_section, version_num):
     """
     Validates parsed sections from a LAS file depending on the section
@@ -1207,6 +1225,8 @@ def validate_parsed_section(name, type, parsed_section, version_num):
         return validate_version(parsed_section, version_num)
     elif name == 'well' and type == 'header':
         return validate_well(parsed_section, version_num)
+    elif name == 'curves' and type == 'header':
+        return validate_curves(parsed_section, version_num)
     elif name == 'data' and type == 'data':
         if hasattr(parsed_section, 'read_errors'):
             return False
@@ -1518,30 +1538,36 @@ class LASSection():
 
     def __repr__(self):
         return (
-            f"LASSection(name={self.name!r}, type={self.type!r}, "
-            f"version_num={self.version_num!r})"
+            f"<LASSection(name={self.name!r}, type={self.type!r}, "
+            f"version_num={self.version_num!r})>"
         )
 
     def __str__(self):
-        s = "LASSection\n"
-        s += f"    Name: {self.name}\n"
-        s += f"    Type: {self.type}\n"
-        s += f"    Version: {self.version_num}\n"
-        s += f"    Delimiter: {self.delimiter}\n"
+        s = (
+            "LASSection\n"
+            f"    Name: {self.name}\n"
+            f"    Type: {self.type}\n"
+            f"    Version: {self.version_num}\n"
+            f"    Delimiter: {self.delimiter}\n"
+        )
         if not hasattr(self, 'parse_error'):
             s += "    Parsed: True\n"
         else:
-            s += "    Parsed: False\n"
-            s += "    Errors:\n"
-            s += f"        Parsing Error: {self.parse_error}\n"
-            s += f"        Traceback:\n{self.parse_tb}\n"
+            s += (
+                "    Parsed: False\n"
+                "    Errors:\n"
+                f"        Parsing Error: {self.parse_error}\n"
+                f"        Traceback:\n{self.parse_tb}\n"
+            )
         if not hasattr(self, 'validate_error'):
             s += f"    Validated: {self.validated}\n"
         else:
-            s += f"    Validated: {self.validated}\n"
-            s += "    Errors:\n"
-            s += f"        Validation Error: {self.validate_error}\n"
-            s += f"        Traceback:\n{self.validate_tb}\n"
+            s += (
+                f"    Validated: {self.validated}\n"
+                "    Errors:\n"
+                f"        Validation Error: {self.validate_error}\n"
+                f"        Traceback:\n{self.validate_tb}\n"
+            )
         if hasattr(self, 'df'):
             s += f"    Rows: {len(self.df)}\n"
 
