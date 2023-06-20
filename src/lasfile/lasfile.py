@@ -1937,6 +1937,9 @@ def api_from_las(input):
                 except Exception:
                     pass
 
+            # Remove Null values from valid_values
+            valid_values = [x for x in valid_values if x is not None]
+
             # if there are matched values, check if they have the same
             # first 10 characters
             if len(valid_values) > 0:
@@ -1944,7 +1947,7 @@ def api_from_las(input):
                     x.unformatted_10_digit == valid_values[0].unformatted_10_digit  # noqa: E501
                     for x in valid_values
                 ):
-                    return APINumber(matched_values[0])
+                    return valid_values[0]
                 else:
                     # If they don't have the same first 10 characters,
                     # return the longest valid_value as an APINumber
