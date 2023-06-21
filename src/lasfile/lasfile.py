@@ -1254,6 +1254,8 @@ class LASData():
     version_num : str
         The version of the LAS file.
 
+    wrap : bool
+
     delimiter : str, optional
         The delimiter used in the LAS data, such as SPACE, COMMA, or
         TAB. Defaults to None, indicating a space delimiter.
@@ -1295,52 +1297,110 @@ class LASData():
         self,
         raw_data,
         version_num,
+        wrap=False,
         delimiter=None,
         invalid_raise=False,
         unrecognized_delimiters=True,
         default_delimiter=' '
     ):
+        # Initialize attributes
         self.raw_data = raw_data
         self.delimiter = delimiter
+        self.wrap = wrap
+        # Initialize the delimiter dictionary
         delim_dict = {
             'SPACE': ' ',
             'COMMA': ',',
             'TAB': '\t'
         }
+        # Get the delimiter value from the dictionary
         if self.delimiter in delim_dict.keys():
             delim = delim_dict[self.delimiter]
+        # If the delimiter is a space, comma, tab, or None, use it
         elif self.delimiter in delim_dict.values() or self.delimiter is None:
             delim = self.delimiter
         elif unrecognized_delimiters:
+            # If unrecognized delimiters are allowed, use the default
+            # delimiter if it is in the dictionary
             if default_delimiter in delim_dict.values():
                 delim = default_delimiter
             else:
+                # Otherwise, raise an error
                 self.delimiter_error = (
                     f"Unrecognized delimiter: '{self.delimiter}', and default "
                     f"delimiter '{default_delimiter} unable to load!"
                 )
         else:
+            # If unrecognized delimiters are not allowed, and the
+            # input delimiter is not in the dictionary, raise an error
             self.delimiter_error = (
                 f"Unrecognized delimiter: '{self.delimiter}', unable to load!"
             )
             return
-        with StringIO(self.raw_data) as f:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                self.data = genfromtxt(
-                    f,
-                    delimiter=delim,
-                    invalid_raise=invalid_raise
-                )
-                self.df = DataFrame(self.data)
-                for warn in w:
-                    if issubclass(warn.category, UserWarning):
-                        self.read_errors = [
-                            err
-                            for err
-                            in str(warn.message).split("\n")
-                        ]
-                        return
+        if wrap:
+            # If the data is wrapped...
+            # Replace the newline characters before each depth value
+            # with a unique separator
+            processed_data = re.sub(r'\n(?=\d)', ' | ', self.raw_data)
+
+            # Replace all newline characters with space
+            processed_data = processed_data.replace('\n', ' ')
+
+            # Split the data into records using the unique separator
+            records = processed_data.split(' | ')
+
+            # Convert the list of records into a single string with each
+            # record on a separate line
+            records_str = '\n'.join(records)
+
+            # Create a file-like object from the string
+            with StringIO(records_str) as f:
+                # Catch any warnings that occur when reading the data
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    # Use numpy's genfromtxt to read the data into a
+                    # numpy array
+                    self.data = genfromtxt(
+                        f,
+                        delimiter=delim,
+                        invalid_raise=invalid_raise
+                    )
+                    # Convert the numpy array to a pandas DataFrame
+                    self.df = DataFrame(self.data)
+                    for warn in w:
+                        if issubclass(warn.category, UserWarning):
+                            # Store any read errors
+                            self.read_errors = [
+                                err
+                                for err
+                                in str(warn.message).split("\n")
+                            ]
+                            return
+        else:
+            # If the data is not wrapped...
+            # Create a file-like object from the string
+            with StringIO(self.raw_data) as f:
+                # Catch any warnings that occur when reading the data
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    # Use numpy's genfromtxt to read the data into a
+                    # numpy array
+                    self.data = genfromtxt(
+                        f,
+                        delimiter=delim,
+                        invalid_raise=invalid_raise
+                    )
+                    # Convert the numpy array to a pandas DataFrame
+                    self.df = DataFrame(self.data)
+                    for warn in w:
+                        if issubclass(warn.category, UserWarning):
+                            # Store any read errors
+                            self.read_errors = [
+                                err
+                                for err
+                                in str(warn.message).split("\n")
+                            ]
+                            return
 
 
 class LASSection():
