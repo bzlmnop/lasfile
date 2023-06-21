@@ -1947,16 +1947,18 @@ class LASFile():
                     # columns in the data section, set a validation
                     # error
                     else:
-                        self.validate_error = (
-                            "Curves and data sections are not congruent."
-                        )
+                        if not hasattr(self, 'validate_error'):
+                            self.validate_error['curves'] = (
+                                "Curves and data sections are not congruent."
+                            )
                     # Check if there are repeated curve mnemonics in the
                     # definition section and if there are, set the
                     # validation error
                     if len(self.curves.df.mnemonic.unique()) != def_rows:
-                        self.validate_error = (
-                            "Curve mnemonics are not unique."
-                        )
+                        if not hasattr(self, 'validate_error'):
+                            self.validate_error['curves'] = (
+                                "Curve mnemonics are not unique."
+                            )
 
     def __str__(self):
         s = f"LASFile: {self.file_path}\n"
