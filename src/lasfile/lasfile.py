@@ -779,7 +779,7 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
         return DataFrame(results)
 
 
-def parse_data_section(raw_data, version_num, delimiter=None):
+def parse_data_section(raw_data, version_num, wrap, delimiter=None):
     """
     Parses the data section of the input raw data based on the provided
     version number.
@@ -809,7 +809,11 @@ def parse_data_section(raw_data, version_num, delimiter=None):
 
     """
     filtered_data = re.sub(r'^[#~].*\n', '', raw_data, flags=re.MULTILINE)
-    loaded_data = LASData(filtered_data, version_num, delimiter=delimiter)
+    loaded_data = LASData(
+        filtered_data,
+        version_num,
+        wrap=wrap,
+        delimiter=delimiter)
     return loaded_data
 
 
@@ -1305,8 +1309,9 @@ class LASData():
     ):
         # Initialize attributes
         self.raw_data = raw_data
-        self.delimiter = delimiter
+        self.version_num = version_num
         self.wrap = wrap
+        self.delimiter = delimiter
         # Initialize the delimiter dictionary
         delim_dict = {
             'SPACE': ' ',
@@ -1480,11 +1485,11 @@ class LASSection():
         raw_data,
         section_type,
         version_num,
+        wrap,
         assoc=None,
         delimiter=None,
         parse_on_init=True,
-        validate_on_init=True,
-        wrap=False
+        validate_on_init=True
     ):
         # initialize attributes
         self.name = name
@@ -1537,6 +1542,7 @@ class LASSection():
                         self.parsed_section = parse_data_section(
                             self.raw_data,
                             version_num=version_num,
+                            wrap=self.wrap,
                             delimiter=self.delimiter
                         )
                         self.df = self.parsed_section.df
@@ -1560,6 +1566,7 @@ class LASSection():
                         self.parsed_section = parse_data_section(
                             self.raw_data,
                             version_num=version_num,
+                            wrap=self.wrap,
                             delimiter=self.delimiter
                         )
                         self.df = self.parsed_section.df
@@ -1755,10 +1762,12 @@ class LASFile():
                         self.read_error = f"Couldn't read file: {str(e)}"
                         return
 
-                    # If it read correctly try to extract the version
+                    # If it read correctly try to extract the version,
+                    # wrap, and delimiter and append it to the sections
                     try:
                         self.version = get_version_section(data)
                         self.version_num = self.version.version_num
+                        self.wrap = self.version.wrap
                         self.delimiter = self.version.delimiter
                         self.sections.append(self.version)
                     # If a version couldn't be extracted, and the user
@@ -1857,6 +1866,7 @@ class LASFile():
                                 raw_data,
                                 section_type,
                                 self.version_num,
+                                self.wrap
                                 )
                             self.sections.append(section)
                         for section in self.sections:
