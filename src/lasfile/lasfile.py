@@ -1486,8 +1486,8 @@ class LASSection():
         section_type,
         version_num,
         wrap,
-        assoc=None,
         delimiter=None,
+        assoc=None,
         parse_on_init=True,
         validate_on_init=True
     ):
@@ -1866,7 +1866,8 @@ class LASFile():
                                 raw_data,
                                 section_type,
                                 self.version_num,
-                                self.wrap
+                                self.wrap,
+                                delimiter=self.delimiter
                                 )
                             self.sections.append(section)
                         for section in self.sections:
