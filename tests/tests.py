@@ -29,6 +29,7 @@ def test_read_las():
         # Test that the version section is present, the version
         # number is correct, and that there are no errors in
         # parsing or validating the version section
+        assert 'open_error' not in vars(las).keys()
         assert 'version_error' not in vars(las).keys()
         assert 'version_tb' not in vars(las).keys()
         assert las.version is not None
@@ -58,6 +59,8 @@ def test_read_las():
             for section in las.sections:
                 assert 'parse_error' not in vars(section).keys()
                 assert 'validate_error' not in vars(section).keys()
+        assert 'parse_error' not in vars(las).keys()
+        assert 'validate_error' not in vars(las).keys()
 
 
 def test_api_from_las():

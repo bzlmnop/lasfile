@@ -1801,6 +1801,26 @@ class LASFile():
                             self.sections.append(section)
                         for section in self.sections:
                             setattr(self, section.name, section)
+                            # Aggregate parse_errors and validate_errors
+                            # from the sections
+                            if hasattr(section, 'parse_error'):
+                                if not hasattr(self, 'parse_error'):
+                                    self.parse_error = {
+                                        section.name: section.parse_error
+                                    }
+                                else:
+                                    self.parse_error[section.name] = (
+                                        section.parse_error
+                                    )
+                            if hasattr(section, 'validate_error'):
+                                if not hasattr(self, 'validate_error'):
+                                    self.validate_error = {
+                                        section.name: section.validate_error
+                                    }
+                                else:
+                                    self.validate_error[section.name] = (
+                                        section.validate_error
+                                    )
                     except Exception as e:
                         self.section_load_error = (
                             f"Sections failed to load: {str(e)}"
