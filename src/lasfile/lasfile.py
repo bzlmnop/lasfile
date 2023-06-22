@@ -10,6 +10,45 @@ from pandas import DataFrame
 import warnings
 from apinum import APINumber
 
+
+class LASFileError(Exception):
+    """Raised when a LAS file experiences an error in the read, parse,
+    of validata process"""
+    pass
+
+
+class LASFileCriticalError(LASFileError):
+    """Raised when a LAS file experiences an error in the
+    parse or validate process that is critical to the file's
+    integrity"""
+    pass
+
+
+class LASFileOpenError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the open
+    process"""
+    pass
+
+
+class LASFileMinorError(LASFileError):
+    """Raised when a LAS file experiences an error in the
+    parse or validate process that is not critical to the file's
+    integrity"""
+    pass
+
+
+class LASFileMissingMnemonicError(LASFileMinorError):
+    """Raised when validating a section of a LAS file that is missing
+    a required mnemonic"""
+    pass
+
+
+class LASVersionError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the version
+    parsing and validation process"""
+    pass
+
+
 # Set known versions
 known_versions = ['1.2', '2.0', '3.0']
 # Set known sections from json file
@@ -106,111 +145,6 @@ def get_version_num(data,
                 return version_num
 
     raise Exception("Could not get version, version number not recognized.")
-
-
-# def get_version_section(
-#         data,
-#         handle_common_errors=True,
-#         accept_unknown_versions=False,
-#         allow_non_numeric=False,
-#         unknown_value=None
-#     ):
-#     """
-#     Extracts the version section from the given raw data, parses it,
-#     validates it, and returns a loaded section object.
-
-#     This function performs several steps to process the version section
-#     from the raw data. It extracts the version section, parses it into
-#     a DataFrame, attempts to extract and validate a version number, and
-#     then tries to load this all into a LASSection object.
-
-#     Parameters:
-#     ----------
-#     data : str
-#         The raw data string to extract the version section from. The
-#         version section should be marked with '~V'.
-
-#     handle_common_errors : bool, optional
-#         Whether to handle common errors when extracting the
-#         version number. (default is True)
-
-#     accept_unknown_versions : bool, optional
-#         Whether to accept unknown versions when extracting the version
-#         number. (default is False)
-
-#     allow_non_numeric : bool, optional
-#         Whether to allow non-numeric versions when extracting the
-#         version number. (default is False)
-
-#     unknown_value : any, optional
-#         The value to use when an unknown version number is encountered.
-#         This only applies if `accept_unknown_versions`
-#         is also True. (default is None)
-
-#     Returns:
-#     -------
-#     loaded_section : LASSection
-#         The loaded version section.
-
-#     Raises:
-#     ------
-#     Exception:
-#         If parsing the version section fails, if extracting the
-#         version number fails, if validating the version section fails,
-#         or if loading the section into a LASSection object fails.
-#     """
-#     # Extract version section from raw data
-#     section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
-#     section_list = re.findall(section_regex, data)
-#     version_section = section_list[0]
-#     # Parse version section
-#     try:
-#         df = parse_header_section(version_section)
-#     except:
-#         raise Exception("Failed to parse version section.")
-#     # Attempt to extract a version number from the parsed section
-#     try:
-#         version_num = get_version_num(
-#             df,
-#             handle_common_errors=handle_common_errors,
-#             accept_unknown_versions=accept_unknown_versions,
-#             allow_non_numeric=allow_non_numeric,
-#             unknown_value=unknown_value
-#         )
-#     except Exception as e:
-#         raise e
-#     # Attempt to validate the section
-#     if validate_version(df,version_num=version_num):
-#         try:
-#             wrap_val = df.loc[df['mnemonic']=="WRAP","value"].values[0]
-#         except Exception as e:
-#             raise Exception(f"couldnt get wrap: {str(e)}")
-#         if version_num == "3.0":
-#             try:
-#                 dlm_val = df.loc[df['mnemonic']=="DLM","value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"couldnt get version: {str(e)}")
-#         else:
-#             dlm_val = None
-#         # Attempt to load the section into a section object
-#         try:
-#             loaded_section = LASSection(
-#                 'version',
-#                 version_section,
-#                 'header',
-#                 version_num,
-#                 delimiter=dlm_val,
-#                 parse_on_init=False,
-#                 validate_on_init=False
-#             )
-#             loaded_section.df = df
-#             loaded_section.validated = True
-#             loaded_section.version_num = version_num
-#             return loaded_section
-#         except:
-#             raise Exception("Couldn't load into section object.")
-#     else:
-#         raise Exception("Coulnt validate version section.")
 
 
 def get_version_section(data,
@@ -817,92 +751,6 @@ def parse_data_section(raw_data, version_num, wrap, delimiter=None):
     return loaded_data
 
 
-# def validate_version(df, version_num=None):
-#     """
-#     Validates the version of a dataframe.
-
-#     This function checks if the dataframe contains all required
-#     mnemonics for the given version number and verifies the values of
-#     these mnemonics. The specific checks differ based on the version
-#     number.
-
-#     Parameters:
-#     ----------
-#     df : DataFrame
-#         The dataframe to be validated. This dataframe should contain a
-#         'mnemonic' column and a 'value' column.
-
-#     version_num : str, optional
-#         The version number of the dataframe. Must be either "1.2",
-#         "2.0", or "3.0". If not provided, the function will use the
-#         value in the dataframe.
-
-#     Returns:
-#     -------
-#     bool:
-#         Returns True if the dataframe is valid for the given version
-#         number.
-
-#     Raises:
-#     ------
-#     Exception:
-#         If any of the required mnemonics are missing or have invalid
-#         values, or if the version number is not one of the expected
-#         values ("1.2", "2.0", "3.0").
-#     """
-#     if version_num == "1.2" or version_num == "2.0":
-#         req_mnemonics = [
-#             "VERS",
-#             "WRAP"
-#         ]
-#     elif version_num == "3.0":
-#         req_mnemonics = [
-#             "VERS",
-#             "WRAP",
-#             "DLM"
-#         ]
-#     if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-#         if version_num == "1.2" or version_num == "2.0":
-#             try:
-#                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"Couldnt get VERS value: {str(e)}")
-#             try:
-#                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"Couldnt get WRAP value: {str(e)}")
-#             if wrap.upper() in ["YES", "NO"]:
-#                 return True
-#             else:
-#                 raise Exception("Wrap value must be 'YES' or 'NO'.")
-#         elif version_num == "3.0":
-#             try:
-#                 vers = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"Couldnt get VERS value: {str(e)}")
-#             try:
-#                 wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"Couldnt get WRAP value: {str(e)}")
-#             try:
-#                 dlm = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
-#             except Exception as e:
-#                 raise Exception(f"Couldnt get DLM value: {str(e)}")
-#             if wrap.upper() in ["NO"]:
-#                 if dlm.upper() in ["SPACE", "COMMA", "TAB"]:
-#                     return True
-#                 elif dlm is None or dlm == '':
-#                     return True
-#                 else:
-#                     raise Exception("Unrecognized delimiter.")
-#             else:
-#                 raise Exception("Wrap value must be 'NO'.")
-#         else:
-#             raise Exception("Only accepts version 1.2, 2.0, and 3.0")
-#     else:
-#         raise Exception("Missing required version section mnemonic.")
-
-
 def validate_version(df, version_num=None):
     """
     Validates the version of a dataframe.
@@ -1237,6 +1085,13 @@ def validate_parsed_section(name, type, parsed_section, version_num):
             return False
         else:
             return True
+    elif '_definition' in name and type == 'header':
+        return validate_curves(parsed_section, version_num)
+    elif '_data' in name and type == 'data':
+        if hasattr(parsed_section, 'read_errors'):
+            return False
+        else:
+            return True
     else:
         return False
 
@@ -1501,6 +1356,36 @@ class LASSection():
         self.validated = False
         self.wrap = wrap
         # parse section
+        if parse_on_init:
+            try:
+                self.parse()
+            except Exception as e:
+                self.parse_error = Exception(
+                    f"Couldn't parse section {self.name}: {str(e)}"
+                )
+                self.parse_tb = traceback.format_exc()
+                return
+        # validate section
+        if (
+            parse_on_init and validate_on_init and
+            not hasattr(self, 'parse_error')
+        ):
+            try:
+                validation = validate_parsed_section(
+                    self.name,
+                    self.type,
+                    self.parsed_section,
+                    self.version_num
+                )
+                self.validated = validation
+            except Exception as e:
+                self.validate_error = Exception(
+                    f"Couldn't validate section {self.name}: {str(e)}"
+                )
+                self.validate_tb = traceback.format_exc()
+                return
+
+    def parse(self):
         if '\n' in self.raw_data:
             # parse title line
             title_line_end = self.raw_data.index('\n')
@@ -1518,46 +1403,43 @@ class LASSection():
                     self.association = None
             else:
                 self.association = None
-
-            # parse header section
+            # if the section is a header section, parse it as such
             if self.type.lower() == 'header':
-                if parse_on_init:
-                    try:
-                        self.parsed_section = parse_header_section(
-                            self.raw_data,
-                            version_num=version_num
-                        )
-                        self.df = self.parsed_section
-                    except Exception as e:
-                        self.parse_error = (
-                            f"Couldn't parse '{self.name}' data: {str(e)}"
-                        )
-                        self.parse_tb = traceback.format_exc()
-                        return
-            # parse data section
+                try:
+                    self.parsed_section = parse_header_section(
+                        self.raw_data,
+                        version_num=self.version_num
+                    )
+                    self.df = self.parsed_section
+                except Exception as e:
+                    self.parse_error = (
+                        f"Couldn't parse '{self.name}' data: {str(e)}"
+                    )
+                    self.parse_tb = traceback.format_exc()
+                    return
+            # if the section is a data section, parse it as such
             elif self.type.lower() == 'data':
-                if parse_on_init:
-                    try:
-                        # print(f"section name: {name}")
-                        self.parsed_section = parse_data_section(
-                            self.raw_data,
-                            version_num=version_num,
-                            wrap=self.wrap,
-                            delimiter=self.delimiter
-                        )
-                        self.df = self.parsed_section.df
-                    except Exception as e:
-                        self.parse_error = (
-                            f"Couldn't parse '{self.name}' data: {str(e)}"
-                        )
-                        self.parse_tb = traceback.format_exc()
-                        return
+                try:
+                    # print(f"section name: {name}")
+                    self.parsed_section = parse_data_section(
+                        self.raw_data,
+                        version_num=self.version_num,
+                        wrap=self.wrap,
+                        delimiter=self.delimiter
+                    )
+                    self.df = self.parsed_section.df
+                except Exception as e:
+                    self.parse_error = (
+                        f"Couldn't parse '{self.name}' data: {str(e)}"
+                    )
+                    self.parse_tb = traceback.format_exc()
+                    return
             # parse other section
             else:
                 try:
                     self.parsed_section = parse_header_section(
                         self.raw_data,
-                        version_num=version_num
+                        version_num=self.version_num
                         )
                     self.df = self.parsed_section
                     self.type = 'header'
@@ -1565,7 +1447,7 @@ class LASSection():
                     try:
                         self.parsed_section = parse_data_section(
                             self.raw_data,
-                            version_num=version_num,
+                            version_num=self.version_num,
                             wrap=self.wrap,
                             delimiter=self.delimiter
                         )
@@ -1577,29 +1459,10 @@ class LASSection():
                         )
                         self.parse_tb = traceback.format_exc()
                         return
-            # validate section
-            if (
-                parse_on_init and validate_on_init and
-                not hasattr(self, 'parse_error')
-            ):
-                try:
-                    validation = validate_parsed_section(
-                        self.name,
-                        self.type,
-                        self.parsed_section,
-                        self.version_num
-                    )
-                    self.validated = validation
-                except Exception as e:
-                    self.validate_error = Exception(
-                        f"Couldn't validate section {self.name}: {str(e)}"
-                    )
-                    self.validate_tb = traceback.format_exc()
-                    return
         # if raw data is only one line or less
         else:
             self.parse_error = (
-                "Couln't parse, raw data is only one line or "
+                "Couln't parse, raw section data is only one line or "
                 "less."
             )
             self.parse_tb = traceback.format_exc()
@@ -1915,6 +1778,7 @@ class LASFile():
                 self.open_tb = f"Error reading file: {tb}"
                 return
         else:
+            self.open_error = "No file path provided."
             return
 
     # Check for definition/curve and data column congruency
@@ -2026,7 +1890,8 @@ def api_from_las(input):
             valid_values = []
             for value in matched_values:
                 try:
-                    valid_values.append(APINumber(value))
+                    APINumber(value)
+                    valid_values.append(value)
                 except Exception:
                     pass
 
@@ -2037,10 +1902,10 @@ def api_from_las(input):
             # first 10 characters
             if len(valid_values) > 0:
                 if all(
-                    x.unformatted_10_digit == valid_values[0].unformatted_10_digit  # noqa: E501
+                    APINumber(x).unformatted_10_digit == APINumber(valid_values[0]).unformatted_10_digit  # noqa: E501
                     for x in valid_values
                 ):
-                    return valid_values[0]
+                    return APINumber(valid_values[0])
                 else:
                     # If they don't have the same first 10 characters,
                     # return the longest valid_value as an APINumber
