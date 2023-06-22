@@ -864,31 +864,35 @@ def validate_v2_well(df):
         "SRVC",
         "DATE",
     ]
-    if all(mnemonic in df.mnemonic.values for mnemonic in req_mnemonics):
-        if (
-            "PROV" in df.mnemonic.values or
-            all(
-                mnemonic
-                in df.mnemonic.values
-                for mnemonic in ["CNTY", "STAT", "CTRY"]
-            )
-        ):
-            if (
-                "API" in df.mnemonic.values or
-                "UWI" in df.mnemonic.values
-            ):
-                return True
-            else:
-                raise Exception(
-                    "Couldnt validate section, 'UWI' and 'API' items missing."
-                    )
-        else:
-            raise Exception(
-                "Couldnt validate section, missing 'PROV' or "
-                "('CNTY','STAT','CTRY') items."
-            )
+    # Instantiate an empty list to store missing mnemonics
+    missing_mnemonics = []
+    if all(mnemonic not in df.mnemonic.values for mnemonic in req_mnemonics):
+        # Make a list of which mnemonics are missing
+        for mnemonic in req_mnemonics:
+            if mnemonic not in df.mnemonic.values:
+                missing_mnemonics.append(mnemonic)
+    # Check that either PROV or CNTY, STAT, CTRY required mnemonics
+    # are present
+    if (
+        "PROV" not in df.mnemonic.values or
+        all(
+            mnemonic not in df.mnemonic.values
+            for mnemonic in ["CNTY", "STAT", "CTRY"]
+        )
+    ):
+        # Make a list of which mnemonics are missing
+        for mnemonic in ["CNTY", "STAT", "CTRY"]:
+            if mnemonic not in df.mnemonic.values:
+                missing_mnemonics.append(mnemonic)
+    if (
+            "API" in df.mnemonic.values or
+            "UWI" in df.mnemonic.values
+    ):
+        missing_mnemonics.append(["API", "UWI"])
+    if missing_mnemonics != []:
+        raise Exception(f"Missing required mnemonics: {missing_mnemonics}")
     else:
-        raise Exception("Missing required mnemonics.")
+        True
 
 
 # Set of valid country codes for the CTRY mnemonic
@@ -1380,7 +1384,7 @@ class LASSection():
                 self.validated = validation
             except Exception as e:
                 self.validate_error = Exception(
-                    f"Couldn't validate section {self.name}: {str(e)}"
+                    f"Couldn't validate {self.name} section: {str(e)}"
                 )
                 self.validate_tb = traceback.format_exc()
                 return
