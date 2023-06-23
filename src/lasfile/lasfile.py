@@ -885,7 +885,7 @@ def validate_v2_well(df):
             if mnemonic not in df.mnemonic.values:
                 missing_mnemonics.append(mnemonic)
     if (
-            "API" not in df.mnemonic.values or
+            "API" not in df.mnemonic.values and
             "UWI" not in df.mnemonic.values
     ):
         missing_mnemonics.append("API")
