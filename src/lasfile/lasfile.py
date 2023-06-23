@@ -866,6 +866,7 @@ def validate_v2_well(df):
     ]
     # Instantiate an empty list to store missing mnemonics
     missing_mnemonics = []
+    # Check if all required mnemonics are present
     if all(mnemonic not in df.mnemonic.values for mnemonic in req_mnemonics):
         # Make a list of which mnemonics are missing
         for mnemonic in req_mnemonics:
@@ -894,10 +895,6 @@ def validate_v2_well(df):
         raise Exception(f"Missing required mnemonics: {missing_mnemonics}")
     else:
         True
-
-
-# Set of valid country codes for the CTRY mnemonic
-valid_country_codes = ["US", "CA"]
 
 
 def validate_v3_well(df):
@@ -941,56 +938,85 @@ def validate_v3_well(df):
         "CTRY",
         "DATE",
     ]
+    # Set of valid country codes for the CTRY mnemonic
+    valid_country_codes = ["US", "CA"]
+    # Instantiate an empty list to store missing mnemonics
+    missing_mnemonics = []
+    # Check if all required mnemonics are present
     if all(
-        mnemonic
-        in df.mnemonic.values
+        mnemonic not in df.mnemonic.values
         for mnemonic in req_mnemonics
     ):
+        # Make a list of which mnemonics are missing
+        for mnemonic in req_mnemonics:
+            if mnemonic not in df.mnemonic.values:
+                missing_mnemonics.append(mnemonic)
+    # Check that either PROV or CNTY, STAT, CTRY required mnemonics
+    if (
+        all(
+            mnemonic not in df.mnemonic.values
+            for mnemonic in ["LATI", "LONG", "GDAT"]
+        )
+        or
+        all(
+            mnemonic not in df.mnemonic.values
+            for mnemonic in ["X", "Y", "GDAT", "HZCS"]
+        )
+    ):
         if (
-            all(
-                mnemonic
-                in df.mnemonic.values
+            any(
+                mnemonic in df.mnemonic.values
                 for mnemonic in ["LATI", "LONG", "GDAT"]
             )
-            or
-            all(
-                mnemonic
-                in df.mnemonic.values
+        ):
+            # Make a list of which mnemonics are missing
+            for mnemonic in ["LATI", "LONG", "GDAT"]:
+                if mnemonic not in df.mnemonic.values:
+                    missing_mnemonics.append(mnemonic)
+        elif (
+            any(
+                mnemonic in df.mnemonic.values
                 for mnemonic in ["X", "Y", "GDAT", "HZCS"]
             )
         ):
-            country_code = df.loc[
-                df["mnemonic"] == "CTRY", 'value'
-            ].values[0].upper()
-            if country_code in valid_country_codes:
-                if country_code == "CA":
-                    if all(
-                        mnemonic
-                        in df.mnemonic.values
-                        for mnemonic in ["PROV", "UWI", "LIC"]
-                    ):
-                        return True
-                elif country_code == "US":
-                    if all(
-                        mnemonic
-                        in df.mnemonic.values
-                        for mnemonic in ["PROV", "UWI", "LIC"]
-                    ):
-                        return True
+            # Make a list of which mnemonics are missing
+            for mnemonic in ["X", "Y", "GDAT", "HZCS"]:
+                if mnemonic not in df.mnemonic.values:
+                    missing_mnemonics.append(mnemonic)
+    if "CTRY" in df.mnemonic.values:
+        country_code = df.loc[
+            df["mnemonic"] == "CTRY", 'value'
+        ].values[0].upper()
+        if country_code in valid_country_codes:
+            if country_code == "CA":
+                if all(
+                    mnemonic not in df.mnemonic.values
+                    for mnemonic in ["PROV", "UWI", "LIC"]
+                ):
+                    # Make a list of which mnemonics are missing
+                    for mnemonic in ["PROV", "UWI", "LIC"]:
+                        if mnemonic not in df.mnemonic.values:
+                            missing_mnemonics.append(mnemonic)
+            elif country_code == "US":
+                if all(
+                    mnemonic not in df.mnemonic.values
+                    for mnemonic in ["STAT", "CNTY", "API"]
+                ):
+                    # Make a list of which mnemonics are missing
+                    for mnemonic in ["STAT", "CNTY", "API"]:
+                        if mnemonic not in df.mnemonic.values:
+                            missing_mnemonics.append(mnemonic)
             elif (
                     country_code is None or
                     country_code == ''
             ):
-                return True
+                pass
             else:
                 raise Exception(f"Invalid country code {country_code}")
-        else:
-            raise Exception(
-                "Couldnt validate section, missing ('LATI','LONG','GDAT') "
-                "or ('X','Y','GDAT','HZCS') items."
-                )
+    if missing_mnemonics != []:
+        raise Exception(f"Missing required mnemonics: {missing_mnemonics}")
     else:
-        raise Exception("Missing required mnemonics.")
+        return True
 
 
 def validate_well(df, version_num):
