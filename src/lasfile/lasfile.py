@@ -874,7 +874,7 @@ def validate_v2_well(df):
     # Check that either PROV or CNTY, STAT, CTRY required mnemonics
     # are present
     if (
-        "PROV" not in df.mnemonic.values or
+        "PROV" not in df.mnemonic.values and
         all(
             mnemonic not in df.mnemonic.values
             for mnemonic in ["CNTY", "STAT", "CTRY"]
@@ -885,10 +885,11 @@ def validate_v2_well(df):
             if mnemonic not in df.mnemonic.values:
                 missing_mnemonics.append(mnemonic)
     if (
-            "API" in df.mnemonic.values or
-            "UWI" in df.mnemonic.values
+            "API" not in df.mnemonic.values or
+            "UWI" not in df.mnemonic.values
     ):
-        missing_mnemonics.append(["API", "UWI"])
+        missing_mnemonics.append("API")
+        missing_mnemonics.append("UWI")
     if missing_mnemonics != []:
         raise Exception(f"Missing required mnemonics: {missing_mnemonics}")
     else:
