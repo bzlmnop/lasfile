@@ -37,7 +37,7 @@ class LASFileMinorError(LASFileError):
     pass
 
 
-class LASFileMissingMnemonicError(LASFileMinorError):
+class LASSectionMissingMnemonicError(LASFileMinorError):
     """Raised when validating a section of a LAS file that is missing
     a required mnemonic"""
     pass
@@ -120,7 +120,7 @@ def get_version_num(data,
     try:
         version_num = df.loc[df['mnemonic'] == "VERS", "value"].values[0]
     except Exception as e:
-        raise Exception(f"Could not get version: {str(e)}")
+        raise LASVersionError(f"Could not get version: {str(e)}")
 
     # Check if version number is known
     if version_num in known_versions:
@@ -204,8 +204,8 @@ def get_version_section(data,
     # Parse version section
     try:
         df = parse_header_section(version_section)
-    except Exception:
-        raise Exception("Failed to parse version section.")
+    except Exception as e:
+        raise LASVersionError(f"Failed to parse version section: {e}")
 
     # Attempt to extract a version number from the parsed section
     try:
@@ -217,11 +217,11 @@ def get_version_section(data,
             unknown_value=unknown_value
         )
     except Exception as e:
-        raise e
+        raise LASVersionError(f"Failed to extract version number: {e}")
 
     # Attempt to validate the section
     if not validate_version(df, version_num=version_num):
-        raise Exception("Could not validate version section.")
+        raise LASVersionError("Could not validate the version section.")
 
     try:
         wrap_val = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
@@ -230,13 +230,13 @@ def get_version_section(data,
         elif wrap_val.upper() == 'NO':
             wrap = False
     except Exception as e:
-        raise Exception(f"could not get wrap: {str(e)}")
+        raise LASVersionError(f"Could not get WRAP: {str(e)}")
 
     if version_num == "3.0":
         try:
             dlm_val = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
         except Exception as e:
-            raise Exception(f"could not get version: {str(e)}")
+            raise LASVersionError(f"Could not get DLM: {str(e)}")
     else:
         dlm_val = None
 
@@ -257,7 +257,7 @@ def get_version_section(data,
         loaded_section.version_num = version_num
         return loaded_section
     except Exception:
-        raise Exception("Couldn't load into section object.")
+        raise LASVersionError("Couldn't load into section object.")
 
 
 def parse_title_line(title_line,
@@ -348,8 +348,7 @@ def parse_v2_title(title_line, all_lowercase=True):
         return section_title
     else:
         raise Exception(
-            "Cannot parse a line that does not begin with '~' as a "
-            "title line."
+            "Cannot parse title line. Title lines must begin with '~'."
         )
 
 
@@ -649,7 +648,7 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
                     }
                 )
         return DataFrame(results)
-    if version_num == '3.0':
+    elif version_num == '3.0':
         for line in lines:
             format = None
             assocs = None
@@ -799,7 +798,15 @@ def validate_version(df, version_num=None):
             mnemonic in [val.upper() for val in df.mnemonic.values]
             for mnemonic in req_mnemonics
         ):
-            raise Exception("Missing required version section mnemonic.")
+            # Make a list of the missing mnemonics
+            missing_mnemonics = [
+                mnemonic for mnemonic in req_mnemonics
+                if mnemonic not in df.mnemonic.values
+            ]
+            raise Exception(
+                f"Missing required version section mnemonics: "
+                f"{missing_mnemonics}"
+                )
         else:
             # Auto repair the mnemonic case
             df['mnemonic'] = df['mnemonic'].str.upper()
