@@ -1,6 +1,6 @@
 import os
 import glob
-from src.lasfile.lasfile import LASFile, api_from_las
+from src.lasfile.lasfile import LASFile, api_from_las, error_check
 
 
 def get_test_las_paths():
@@ -61,6 +61,7 @@ def test_read_las():
                 assert 'validate_error' not in vars(section).keys()
         assert 'parse_error' not in vars(las).keys()
         assert 'validate_error' not in vars(las).keys()
+        assert error_check(las) is True
 
 
 def test_api_from_las():
