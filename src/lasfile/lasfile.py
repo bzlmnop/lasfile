@@ -2031,3 +2031,55 @@ def api_from_las(input):
             raise e
     else:
         return None
+
+
+def error_check(las, critical_only=True):
+    # Check if the las object has any errors and if critical_only is True,
+    # if any are of type LASFileCriticalError return False when one is found,
+    # otherwise return False when any error is found.
+    if critical_only:
+        if hasattr(las, 'open_error'):
+            if isinstance(las.open_error, LASFileCriticalError):
+                return False
+        elif hasattr(las, 'section_load_error'):
+            if type(las.section_load_error) == list:
+                for error in las.section_load_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
+            elif type(las.section_load_error) == Exception:
+                if isinstance(las.section_load_error, LASFileCriticalError):
+                    return False
+        elif hasattr(las, 'read_error'):
+            if type(las.read_error) == list:
+                for error in las.read_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
+            elif type(las.read_error) == Exception:
+                if isinstance(las.read_error, LASFileCriticalError):
+                    return False
+        elif hasattr(las, 'version_error'):
+            if type(las.version_error) == list:
+                for error in las.version_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
+            elif type(las.version_error) == Exception:
+                if isinstance(las.version_error, LASFileCriticalError):
+                    return False
+        elif hasattr(las, 'parse_error'):
+            if type(las.parse_error) == list:
+                for error in las.parse_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
+            elif type(las.parse_error) == Exception:
+                if isinstance(las.parse_error, LASFileCriticalError):
+                    return False
+        elif hasattr(las, 'validate_error'):
+            if type(las.validate_error) == list:
+                for error in las.validate_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
+            elif type(las.validate_error) == Exception:
+                if isinstance(las.validate_error, LASFileCriticalError):
+                    return False
+        else:
+            return True
