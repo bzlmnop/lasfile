@@ -2034,6 +2034,22 @@ def api_from_las(input):
 
 
 def error_check(las, critical_only=True):
+    """
+    Check if a LASFile object has any errors
+
+    Parameters
+    ----------
+    las : LASFile object
+        The LASFile object to check for errors
+    critical_only : bool
+        If True, only check for critical errors, otherwise check for all
+        errors
+
+    Returns
+    -------
+    bool
+        True if no errors are found, False if any errors are found
+    """
     # Check if the las object has any errors and if critical_only is True,
     # if any are of type LASFileCriticalError return False when one is found,
     # otherwise return False when any error is found.
@@ -2081,5 +2097,20 @@ def error_check(las, critical_only=True):
             elif type(las.validate_error) == Exception:
                 if isinstance(las.validate_error, LASFileCriticalError):
                     return False
+        else:
+            return True
+    else:
+        if hasattr(las, 'open_error'):
+            return False
+        elif hasattr(las, 'section_load_error'):
+            return False
+        elif hasattr(las, 'read_error'):
+            return False
+        elif hasattr(las, 'version_error'):
+            return False
+        elif hasattr(las, 'parse_error'):
+            return False
+        elif hasattr(las, 'validate_error'):
+            return False
         else:
             return True
