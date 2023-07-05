@@ -23,24 +23,6 @@ class LASFileCriticalError(LASFileError):
     pass
 
 
-class LASFileOpenError(LASFileCriticalError):
-    """Raised when a LAS file experiences an error in the open
-    process"""
-    pass
-
-
-class LASFileSplitError(LASFileCriticalError):
-    """Raised when a LAS file experiences an error in the split
-    process"""
-    pass
-
-
-class SectionTitleError(LASFileCriticalError):
-    """Raised when a LAS file experiences an error in the section
-    title parsing and validation process"""
-    pass
-
-
 class LASVersionError(LASFileCriticalError):
     """Raised when a LAS file experiences an error in the version
     parsing and validation process"""
@@ -55,6 +37,30 @@ class UnknownVersionError(LASVersionError):
 
 class VersionExtractionError(LASVersionError):
     """Raise when a version value cannot be extracted from an LAS"""
+    pass
+
+
+class LASFileOpenError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the open
+    process"""
+    pass
+
+
+class LASFileReadError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the read
+    process"""
+    pass
+
+
+class LASFileSplitError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the split
+    process"""
+    pass
+
+
+class SectionTitleError(LASFileCriticalError):
+    """Raised when a LAS file experiences an error in the section
+    title parsing and validation process"""
     pass
 
 
@@ -86,6 +92,12 @@ class LASFileMinorError(LASFileError):
     pass
 
 
+class SectionLoadError(LASFileMinorError):
+    """Raised when an error occurs when loading a non-required
+    section of an LAS file"""
+    pass
+
+
 class SectionParseError(LASFileMinorError):
     """Raised when an error occurs when parsing a non-required
     section of an LAS file"""
@@ -106,6 +118,31 @@ known_secs_path = os.path.join(dir_path, 'known_sections.json')
 
 with open(known_secs_path, 'r') as f:
     known_secs = json.load(f)
+
+# Build a dictionary of required sections for each version from
+# known_secs
+required_sections = {}
+for version, sections in known_secs.items():
+    req_secs_list = [
+        section_name for section_name, section in sections.items()
+        if section['required']
+    ]
+    required_sections[version] = req_secs_list
+
+header_section_names = []
+data_section_names = []
+for version, sections in known_secs.items():
+    for section_name, sec_dict in sections.items():
+        if (
+            sec_dict['type'] == 'header' and
+            section_name not in header_section_names
+        ):
+            header_section_names.append(section_name)
+        elif (
+            sec_dict['type'] == 'data' and
+            section_name not in data_section_names
+        ):
+            data_section_names.append(section_name)
 
 
 def get_version_num(data,
@@ -157,9 +194,16 @@ def get_version_num(data,
     """
     # Parse input data based on its type
     if isinstance(data, str):
-        section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
-        version_section = re.findall(section_regex, data)[0]
-        df = parse_header_section(version_section)
+        try:
+            # If the data is a string, extract the version section
+            section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
+            version_section = re.findall(section_regex, data)[0]
+            # Parse the version section into a DataFrame
+            df = parse_header_section(version_section)
+        except Exception as e:
+            raise LASVersionError(
+                f"Could not extract and parse version section: {str(e)}"
+            )
     elif isinstance(data, DataFrame):
         df = data
     else:
@@ -173,6 +217,7 @@ def get_version_num(data,
 
     # Check if version number is known
     if version_num in known_versions:
+        # Return version number if it is known
         return version_num
 
     # Handle common errors like conversion to float
@@ -193,6 +238,8 @@ def get_version_num(data,
             if allow_non_numeric:
                 return version_num
 
+    # Raise error if no known version number was found even after
+    # handling common errors and if unknown versions are not accepted
     raise UnknownVersionError(
         "Could not get version, version number not recognized."
     )
@@ -247,12 +294,14 @@ def get_version_section(data,
         version number fails, if validating the version section fails,
         or if loading the section into a LASSection object fails.
     """
-    # Extract version section from raw data
+    # Extract whole text of version section from raw data
+    # Regex matches everything between '~V' and '~V' or '~W'
     section_regex = re.compile(r'(~[V].+?)(?=~[VW]|$)', re.DOTALL)
     section_list = re.findall(section_regex, data)
+    # Take the first match, which should be the version section
     version_section = section_list[0]
 
-    # Parse version section
+    # Try to parse version section into a DataFrame
     try:
         df = parse_header_section(version_section)
     except Exception as e:
@@ -272,28 +321,33 @@ def get_version_section(data,
     except Exception as e:
         raise VersionExtractionError(f"Failed to extract version number: {e}")
 
+    # Define default values for dlm_val and wrap
+    dlm_val = None
+    wrap = None
+
     # Attempt to validate the section
     if validate_version(df, version_num=version_num):
-        try:
-            wrap_val = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
-            if wrap_val.upper() == 'YES':
-                wrap = True
-            elif wrap_val.upper() == 'NO':
-                wrap = False
-        except Exception as e:
-            raise MissingCriticalMnemonicError(
-                f"Could not get WRAP: {str(e)}"
-            )
-
-        if version_num == "3.0":
+        if version_num is not None:
+            try:
+                wrap_val = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
+                if wrap_val.upper() == 'YES':
+                    wrap = True
+                elif wrap_val.upper() == 'NO':
+                    wrap = False
+            except Exception as e:
+                wrap = None
+                if version_num in ["1.2", "2.0"]:
+                    raise MissingCriticalMnemonicError(
+                        f"Could not get WRAP: {str(e)}"
+                    )
+        elif version_num == "3.0":
             try:
                 dlm_val = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
             except Exception as e:
+                dlm_val = None
                 raise MissingCriticalMnemonicError(
                     f"Could not get DLM: {str(e)}"
                 )
-        else:
-            dlm_val = None
 
         # Attempt to load the section into a section object
         try:
@@ -443,6 +497,7 @@ def parse_v3_title(title_line, all_lowercase=True, assocs=False):
     Exception:
         If the title line does not begin with '~'.
     """
+    assoc = None
     has_assoc = False
     # Strip leading and trailing whitespace
     title_line = title_line.strip()
@@ -469,9 +524,11 @@ def parse_v3_title(title_line, all_lowercase=True, assocs=False):
             section_title = None
         # Convert to lowercase if requested
         if all_lowercase:
-            section_title = section_title.lower()
+            if section_title is not None:
+                section_title = section_title.lower()
             if assocs and has_assoc:
-                assoc.lower()
+                if assoc is not None:
+                    assoc = assoc.lower()
         # Return the section title and association if requested
         if assocs and has_assoc:
             return section_title, assoc
@@ -629,6 +686,10 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
     if version_num == '2.0' or version_num == '1.2':
         # Skip comment, title, and empty lines
         for line in lines:
+            mnemonic = None
+            units = None
+            value = None
+            descr = None
             if (
                 line.strip().startswith("#") or
                 line.strip().startswith("~") or
@@ -709,6 +770,10 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
         return DataFrame(results)
     elif version_num == '3.0':
         for line in lines:
+            mnemonic = None
+            units = None
+            value = None
+            descr = None
             format = None
             assocs = None
             # Skip comment, title, and empty lines
@@ -872,6 +937,9 @@ def validate_version(df, version_num=None):
             # Auto repair the mnemonic case
             df['mnemonic'] = df['mnemonic'].str.upper()
 
+    # Set empty wrap value
+    wrap = None
+
     try:
         wrap = df.loc[df['mnemonic'] == "WRAP", "value"].values[0]
     except Exception as e:
@@ -881,7 +949,7 @@ def validate_version(df, version_num=None):
             pass
 
     if version_num in ["1.2", "2.0"]:
-        if wrap.upper() not in ["YES", "NO"]:
+        if wrap is not None and wrap.upper() not in ["YES", "NO"]:
             raise LASVersionError(
                 "Wrap value for versions 1.2 and 2.0 must be 'YES' or 'NO'."
             )
@@ -889,7 +957,7 @@ def validate_version(df, version_num=None):
         try:
             dlm = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
             if "wrap" in locals():
-                if wrap.upper() != "NO":
+                if wrap is not None and wrap.upper() != "NO":
                     raise LASVersionError(
                         "Invalid wrap value. Must be 'NO' for version 3.0"
                     )
@@ -973,7 +1041,7 @@ def validate_v2_well(df):
             f"Missing required mnemonics: {missing_mnemonics}"
         )
     else:
-        True
+        return True
 
 
 def validate_v3_well(df):
@@ -1288,8 +1356,9 @@ class LASData():
             'COMMA': ',',
             'TAB': '\t'
         }
+        delim = None
         # Get the delimiter value from the dictionary
-        if self.delimiter in delim_dict.keys():
+        if self.delimiter is not None and self.delimiter in delim_dict.keys():
             delim = delim_dict[self.delimiter]
         # If the delimiter is a space, comma, tab, or None, use it
         elif self.delimiter in delim_dict.values() or self.delimiter is None:
@@ -1301,7 +1370,7 @@ class LASData():
                 delim = default_delimiter
             else:
                 # Otherwise, raise an error
-                self.delimiter_error = (
+                self.delimiter_error = LASFileCriticalError(
                     f"Unrecognized delimiter: '{self.delimiter}', and default "
                     f"delimiter '{default_delimiter} unable to load!"
                 )
@@ -1494,9 +1563,7 @@ class LASSection():
                 )
                 self.validated = validation
             except Exception as e:
-                self.validate_error = Exception(
-                    f"Couldn't validate {self.name} section: {str(e)}"
-                )
+                self.validate_error = e
                 self.validate_tb = traceback.format_exc()
                 return
 
@@ -1512,7 +1579,7 @@ class LASSection():
                     all_lowercase=True,
                     assocs=True
                 )
-                if type(result) != str:
+                if type(result) != str and result is not None:
                     self.association = result[1]
                 else:
                     self.association = None
@@ -1527,11 +1594,23 @@ class LASSection():
                     )
                     self.df = self.parsed_section
                 except Exception as e:
-                    self.parse_error = (
-                        f"Couldn't parse '{self.name}' data: {str(e)}"
-                    )
-                    self.parse_tb = traceback.format_exc()
-                    return
+                    # if it is a required section, return a critical error
+                    # otherwise return a minor error
+                    if (
+                        self.name.lower() in
+                        required_sections[self.version_num]
+                    ):
+                        self.parse_error = RequiredSectionParseError(
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
+                        self.parse_tb = traceback.format_exc()
+                        return
+                    else:
+                        self.parse_error = SectionParseError(
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
+                        self.parse_tb = traceback.format_exc()
+                        return
             # if the section is a data section, parse it as such
             elif self.type.lower() == 'data':
                 try:
@@ -1544,12 +1623,24 @@ class LASSection():
                     )
                     self.df = self.parsed_section.df
                 except Exception as e:
-                    self.parse_error = (
-                        f"Couldn't parse '{self.name}' data: {str(e)}"
-                    )
-                    self.parse_tb = traceback.format_exc()
-                    return
-            # parse other section
+                    # if it is a required section, return a critical error
+                    # otherwise return a minor error
+                    if (
+                        self.name.lower() in
+                        required_sections[self.version_num]
+                    ):
+                        self.parse_error = RequiredSectionParseError(
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
+                        self.parse_tb = traceback.format_exc()
+                        return
+                    else:
+                        self.parse_error = SectionParseError(
+                            f"Couldn't parse '{self.name}' data: {str(e)}"
+                        )
+                        self.parse_tb = traceback.format_exc()
+                        return
+            # parse other sections
             else:
                 try:
                     self.parsed_section = parse_header_section(
@@ -1569,18 +1660,38 @@ class LASSection():
                         self.df = self.parsed_section.df
                         self.type = 'data'
                     except Exception as e:
-                        self.parse_error = (
-                            f"Couldn't parse '{self.name}' data: {str(e)}"
-                        )
-                        self.parse_tb = traceback.format_exc()
+                        # Test if it is a required section or not and
+                        # return the appropriate error
+                        if (
+                            self.name.lower() in
+                            required_sections[self.version_num]
+                        ):
+                            self.parse_error = RequiredSectionParseError(
+                                f"Couldn't parse '{self.name}' data: {str(e)}"
+                            )
+                            self.parse_tb = traceback.format_exc()
+                        else:
+                            self.parse_error = SectionParseError(
+                                f"Couldn't parse '{self.name}' data: {str(e)}"
+                            )
+                            self.parse_tb = traceback.format_exc()
                         return
         # if raw data is only one line or less
         else:
-            self.parse_error = (
-                "Couln't parse, raw section data is only one line or "
-                "less."
-            )
-            self.parse_tb = traceback.format_exc()
+            # Test if it is a critical required section or not and
+            # return the appropriate error
+            if self.name.lower() in required_sections[self.version_num]:
+                self.parse_error = RequiredSectionParseError(
+                    "Couln't parse, raw section data is only one line or "
+                    "less."
+                )
+                self.parse_tb = traceback.format_exc()
+            else:
+                self.parse_error = SectionParseError(
+                    "Couln't parse, raw section data is only one line or "
+                    "less."
+                )
+                self.parse_tb = traceback.format_exc()
 
     def __repr__(self):
         return (
@@ -1729,172 +1840,201 @@ class LASFile():
     def __init__(self, file_path=None, always_try_split=False):
         if file_path is not None:
             self.file_path = file_path
-            # Try to open the file
-            try:
-                with open(self.file_path, 'r') as f:
-                    self.sections = []
-                    # Try to read the file
-                    try:
-                        data = f.read()
-                    except Exception as e:
-                        self.read_error = f"Couldn't read file: {str(e)}"
-                        return
+            self.always_try_split = always_try_split
+            self.sections = []
+            # Try to open and read the file into a string
+            data = self.read_file(self.file_path)
 
-                    # If it read correctly try to extract the version,
-                    # wrap, and delimiter and append it to the sections
-                    try:
-                        self.version = get_version_section(data)
-                        self.version_num = self.version.version_num
-                        self.wrap = self.version.wrap
-                        self.delimiter = self.version.delimiter
-                        self.sections.append(self.version)
-                    # If a version couldn't be extracted, and the user
-                    # has decided to always try to split the sections
-                    # anyway set the version to None otherwise return
-                    # the LASFile object
-                    except Exception as e:
-                        self.version_error = f"Couldn't get version: {str(e)}"
-                        tb = traceback.format_exc()
-                        self.version_tb = f"Couldn't get version: {tb}"
-                        if always_try_split:
-                            self.version_num = None
-                        else:
-                            return
+            if data is not None:
+                # If it read correctly try to extract the version,
+                # wrap, and delimiter and append it to the sections
+                self.get_version(data)
 
-                    # Try to split the file into sections
-                    if self.version_num is not None and self.version_num != '':
-                        s = split_sections(data, self.version_num)
-                        if (
-                            s['version'] != '' and s['version'] is not None and
-                            s['well'] != '' and s['well'] is not None
-                        ):
-                            sections_dict = s
-                        else:
-                            self.split_error = LASFileSplitError(
-                                "Couldn't split into minimum required "
-                                "sections: Version and well sections "
-                                "are empty."
-                            )
-                            if not always_try_split:
-                                return
-                    elif always_try_split:
-                        try:
-                            s = split_sections(data, '2.0')
-                            if (
-                                s['version'] != '' and s['version'] is not None
-                                and
-                                s['well'] != '' and s['well'] is not None
-                            ):
-                                sections_dict = s
-                            else:
-                                raise LASFileSplitError(
-                                    "Tried version 2.0 split, but version and "
-                                    "well sections are still empty"
-                                    )
-                        except Exception as e:
-                            s = split_sections(data, '3.0')
-                            if (
-                                s['version'] != '' and s['version'] is not None
-                                and
-                                s['well'] != '' and s['well'] is not None
-                            ):
-                                sections_dict = s
-                            else:
-                                self.split_error = LASFileSplitError(
-                                    f"Couldn't split into minimum required "
-                                    f"sections: {str(e)}"
-                                )
-                                return
+                sections_dict = self.get_sections(data)
 
-                    # If it split correctly generate las section items
-                    # from the strings
-                    try:
-                        for name, raw_data in sections_dict.items():
-                            header_section_names = [
-                                'version',
-                                'well',
-                                'parameters',
-                                'curves',
-                                'core_parameters',
-                                'core_definition',
-                                'inc_parameters',
-                                'inc_definition',
-                                'drill_parameters',
-                                'drill_definition',
-                                'tops_parameters',
-                                'tops_definition',
-                                'test_parameters',
-                                'test_definition'
-                            ]
-                            data_section_names = ['data']
-                            if name == 'version':
-                                continue
-                            if (
-                                name in header_section_names or
-                                '_parameters' in name or
-                                '_definition' in name
-                            ):
-                                section_type = 'header'
-                            elif name in data_section_names or '_data' in name:
-                                section_type = 'data'
-                            else:
-                                section_type = ''
-                            section = LASSection(
-                                name,
-                                raw_data,
-                                section_type,
-                                self.version_num,
-                                self.wrap,
-                                delimiter=self.delimiter
-                                )
-                            self.sections.append(section)
-                        for section in self.sections:
-                            setattr(self, section.name, section)
-                            # Aggregate parse_errors and validate_errors
-                            # from the sections
-                            if hasattr(section, 'parse_error'):
-                                if not hasattr(self, 'parse_error'):
-                                    self.parse_error = {
-                                        section.name: section.parse_error
-                                    }
-                                else:
-                                    self.parse_error[section.name] = (
-                                        section.parse_error
-                                    )
-                            if hasattr(section, 'validate_error'):
-                                if not hasattr(self, 'validate_error'):
-                                    self.validate_error = {
-                                        section.name: section.validate_error
-                                    }
-                                else:
-                                    self.validate_error[section.name] = (
-                                        section.validate_error
-                                    )
-                    except Exception as e:
-                        self.section_load_error = (
-                            f"Sections failed to load: {str(e)}"
-                        )
-                        self.sections_dict = sections_dict
-                        tb = traceback.format_exc()
-                        self.section_load_tb = f"Sections failed to load: {tb}"
-                        return
+                self.parse_and_validate_sections(sections_dict)
 
-                    # If sections were built correctly, insure
-                    # congruency between definition and data sections
-                    self.validate_defs_and_data()
-            except FileNotFoundError:
-                self.open_error = f"File not found: {self.file_path}"
-                tb = traceback.format_exc()
-                self.open_tb = f"File not found: {tb}"
-                return
-            except Exception as e:
-                self.open_error = f"Error reading file: {str(e)}"
-                tb = traceback.format_exc()
-                self.open_tb = f"Error reading file: {tb}"
-                return
-        else:
-            self.open_error = LASFileOpenError("No file path provided.")
+    def read_file(self, file_path):
+        # Try to open the file
+        try:
+            with open(self.file_path, 'r') as f:
+                try:
+                    data = f.read()
+                    return data
+                except Exception as e:
+                    self.read_error = LASFileCriticalError(
+                        f"Couldn't read file: {str(e)}"
+                    )
+                    tb = traceback.format_exc()
+                    self.read_tb = f"Couldn't read file: {tb}"
+                    return
+        except FileNotFoundError:
+            self.open_error = LASFileOpenError(
+                f"File not found: {self.file_path}"
+            )
+            tb = traceback.format_exc()
+            self.open_tb = f"File not found: {tb}"
             return
+        except Exception as e:
+            self.open_error = LASFileOpenError(
+                f"Error opening file: {str(e)}"
+            )
+            tb = traceback.format_exc()
+            self.open_tb = f"Error opening file: {tb}"
+            return
+
+    def get_version(self, data):
+        # If it read correctly try to extract the version,
+        # wrap, and delimiter and append it to the sections
+        try:
+            self.version = get_version_section(data)
+            self.version_num = self.version.version_num
+            self.wrap = self.version.wrap
+            self.delimiter = self.version.delimiter
+            self.sections.append(self.version)
+            return
+        # If a version couldn't be extracted, and the user
+        # has decided to always try to split the sections
+        # anyway set the version to None otherwise return
+        # the LASFile object
+        except Exception as e:
+            self.version_error = LASFileCriticalError(
+                f"Couldn't get version: {str(e)}"
+            )
+            tb = traceback.format_exc()
+            self.version_tb = LASFileCriticalError(
+                f"Couldn't get version: {tb}"
+            )
+            if self.always_try_split:
+                self.version_num = None
+            else:
+                return
+
+    def get_sections(self, data):
+        # Try to split the file into sections
+        if self.version_num is not None and self.version_num != '':
+            s = split_sections(data, self.version_num)
+            if (
+                s['version'] != '' and s['version'] is not None and
+                s['well'] != '' and s['well'] is not None
+            ):
+                return s
+            else:
+                self.split_error = LASFileSplitError(
+                    "Couldn't split into minimum required "
+                    "sections: Version and well sections "
+                    "are empty."
+                )
+                if not self.always_try_split:
+                    return
+        elif self.always_try_split:
+            try:
+                s = split_sections(data, '2.0')
+                if (
+                    s['version'] != '' and s['version'] is not None
+                    and
+                    s['well'] != '' and s['well'] is not None
+                ):
+                    return s
+                else:
+                    self.split_error = LASFileSplitError(
+                        "Tried version 2.0 split, but version and "
+                        "well sections are still empty"
+                        )
+                    return
+            except Exception as e:
+                s = split_sections(data, '3.0')
+                if (
+                    s['version'] != '' and s['version'] is not None
+                    and
+                    s['well'] != '' and s['well'] is not None
+                ):
+                    return s
+                else:
+                    self.split_error = LASFileSplitError(
+                        f"Couldn't split into minimum required "
+                        f"sections: {str(e)}"
+                    )
+                    return
+
+    def parse_and_validate_sections(self, sections_dict):
+        # If it split correctly generate las section items
+        # from the strings
+        if sections_dict is not None:
+            for name, raw_data in sections_dict.items():
+                # Skip the version section and get the section type
+                if name == 'version':
+                    continue
+                if (
+                    name in header_section_names or
+                    '_parameters' in name or
+                    '_definition' in name
+                ):
+                    section_type = 'header'
+                elif (
+                    name in data_section_names or
+                    '_data' in name
+                ):
+                    section_type = 'data'
+                else:
+                    section_type = ''
+                # Try to create the section
+                try:
+                    section = LASSection(
+                        name,
+                        raw_data,
+                        section_type,
+                        self.version_num,
+                        self.wrap,
+                        delimiter=self.delimiter
+                    )
+                    self.sections.append(section)
+                except Exception as e:
+                    # Try to create the section anyway without parsing
+                    # or validating
+                    try:
+                        section = LASSection(
+                            name,
+                            raw_data,
+                            section_type,
+                            self.version_num,
+                            self.wrap,
+                            delimiter=self.delimiter,
+                            parse_on_init=False,
+                            validate_on_init=False
+                        )
+                        section.parse_error = e
+                        self.sections.append(section)
+                    except Exception as e:
+                        if hasattr(self, 'parse_error'):
+                            self.parse_error[name] = e
+                        else:
+                            self.parse_error = {name: e}
+                # Aggregate parse_errors and validate_errors
+                # from the sections
+                for section in self.sections:
+                    setattr(self, section.name, section)
+                    if hasattr(section, 'parse_error'):
+                        if not hasattr(self, 'parse_error'):
+                            self.parse_error = {
+                                section.name: section.parse_error
+                            }
+                        else:
+                            self.parse_error[section.name] = (
+                                section.parse_error
+                            )
+                    if hasattr(section, 'validate_error'):
+                        if not hasattr(self, 'validate_error'):
+                            self.validate_error = {
+                                section.name: (
+                                    section.validate_error
+                                )
+                            }
+                        else:
+                            self.validate_error[section.name] = (
+                                section.validate_error
+                            )
+        return
 
     # Check for definition/curve and data column congruency
     def validate_defs_and_data(self):
@@ -2001,7 +2141,8 @@ def api_from_las(input):
             # Get the corresponding values for the matched mnemonics
             matched_values = filtered_df['value'].tolist()
 
-            # Attempt to load all matched values into an APINumber objects
+            # Attempt to load all matched values into an APINumber
+            # objects
             valid_values = []
             for value in matched_values:
                 try:
@@ -2017,7 +2158,9 @@ def api_from_las(input):
             # first 10 characters
             if len(valid_values) > 0:
                 if all(
-                    APINumber(x).unformatted_10_digit == APINumber(valid_values[0]).unformatted_10_digit  # noqa: E501
+                    APINumber(x).unformatted_10_digit == APINumber(
+                        valid_values[0]
+                        ).unformatted_10_digit
                     for x in valid_values
                 ):
                     return APINumber(valid_values[0])
@@ -2058,7 +2201,7 @@ def error_check(las, critical_only=True):
             if isinstance(las.open_error, LASFileCriticalError):
                 return False
         elif hasattr(las, 'section_load_error'):
-            if type(las.section_load_error) == list:
+            if type(las.section_load_error) == dict:
                 for error in las.section_load_error:
                     if isinstance(error, LASFileCriticalError):
                         return False
@@ -2066,7 +2209,7 @@ def error_check(las, critical_only=True):
                 if isinstance(las.section_load_error, LASFileCriticalError):
                     return False
         elif hasattr(las, 'read_error'):
-            if type(las.read_error) == list:
+            if type(las.read_error) == dict:
                 for error in las.read_error:
                     if isinstance(error, LASFileCriticalError):
                         return False
@@ -2074,7 +2217,7 @@ def error_check(las, critical_only=True):
                 if isinstance(las.read_error, LASFileCriticalError):
                     return False
         elif hasattr(las, 'version_error'):
-            if type(las.version_error) == list:
+            if type(las.version_error) == dict:
                 for error in las.version_error:
                     if isinstance(error, LASFileCriticalError):
                         return False
@@ -2082,7 +2225,7 @@ def error_check(las, critical_only=True):
                 if isinstance(las.version_error, LASFileCriticalError):
                     return False
         elif hasattr(las, 'parse_error'):
-            if type(las.parse_error) == list:
+            if type(las.parse_error) == dict:
                 for error in las.parse_error:
                     if isinstance(error, LASFileCriticalError):
                         return False
@@ -2090,7 +2233,7 @@ def error_check(las, critical_only=True):
                 if isinstance(las.parse_error, LASFileCriticalError):
                     return False
         elif hasattr(las, 'validate_error'):
-            if type(las.validate_error) == list:
+            if type(las.validate_error) == dict:
                 for error in las.validate_error:
                     if isinstance(error, LASFileCriticalError):
                         return False
