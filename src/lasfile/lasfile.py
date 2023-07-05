@@ -2044,20 +2044,23 @@ class LASFile():
             if section.name == 'data' and section.type == 'data':
                 # Check that the curves and data sections were parsed
                 # correctly into dataframes
-                if hasattr(self.curves, 'df') and hasattr(self.data, 'df'):
+                if (
+                    hasattr(getattr(self, "curves"), 'df') and
+                    hasattr(getattr(self, "data"), 'df')
+                ):
                     # The related definition section should be 'curves'
                     # so, get the rows/cols
-                    def_rows = self.curves.df.shape[0]
-                    data_cols = self.data.df.shape[1]
+                    def_rows = getattr(self, "curves").df.shape[0]
+                    data_cols = getattr(self, "data").df.shape[1]
                     # If the number of rows/curve definitions in the
                     # definition section matches the number of columns
                     # in the data section, rename the columns of the
                     # data section to the curve mnemonics
                     if def_rows == data_cols:
-                        self.data.df.rename(
+                        getattr(self, "data").df.rename(
                             columns=dict(zip(
-                                    self.data.df.columns,
-                                    self.curves.df.mnemonic.values
+                                getattr(self, "data").df.columns,
+                                getattr(self, "curves").df.mnemonic.values
                             )),
                             inplace=True
                         )
@@ -2073,7 +2076,10 @@ class LASFile():
                     # Check if there are repeated curve mnemonics in the
                     # definition section and if there are, set the
                     # validation error
-                    if len(self.curves.df.mnemonic.unique()) != def_rows:
+                    if (
+                        len(getattr(self, "curves").df.mnemonic.unique())
+                        != def_rows
+                    ):
                         if not hasattr(self, 'validate_error'):
                             self.validate_error['curves'] = (
                                 "Curve mnemonics are not unique."
@@ -2089,10 +2095,8 @@ class LASFile():
             s += f"Version Extraction Error: {self.version_error}\n"
         if hasattr(self, 'split_error'):
             s += f"Section Splitting Error: {self.split_error}\n"
-        if hasattr(self, 'section_load_error'):
-            s += f"Section Loading Error: {self.section_load_error}\n"
-            if hasattr(self, 'section_load_tb'):
-                s += f"Section Loading Traceback:\n{self.section_load_tb}"
+        if hasattr(self, 'parse_error'):
+            s += f"Parsing Error: {self.parse_error}\n"
         if hasattr(self, 'validate_error'):
             s += f"Validation Error: {self.validate_error}"
         if hasattr(self, 'sections'):
@@ -2127,16 +2131,20 @@ def api_from_las(input):
             raise e
     elif isinstance(input, LASFile):
         las = input
+    else:
+        las = LASFile()
     # print(las.file_path)
     # If the las has a well section, try to get the api from it
     if hasattr(las, 'well'):
         try:
             # Check if 'UWI', 'uwi', 'API', or 'api' is present in the
             # 'mnemonic' column
-            mask = las.well.df['mnemonic'].str.lower().isin(['uwi', 'api'])
+            mask = getattr(las, "well").df['mnemonic'].str.lower().isin(
+                ['uwi', 'api']
+            )
             # print(mask)
             # Filter the DataFrame using the mask
-            filtered_df = las.well.df[mask]
+            filtered_df = getattr(las, "well").df[mask]
             # print(filtered_df)
             # Get the corresponding values for the matched mnemonics
             matched_values = filtered_df['value'].tolist()
@@ -2200,14 +2208,6 @@ def error_check(las, critical_only=True):
         if hasattr(las, 'open_error'):
             if isinstance(las.open_error, LASFileCriticalError):
                 return False
-        elif hasattr(las, 'section_load_error'):
-            if type(las.section_load_error) == dict:
-                for sec_name, error in las.section_load_error.items():
-                    if isinstance(error, LASFileCriticalError):
-                        return False
-            elif type(las.section_load_error) == Exception:
-                if isinstance(las.section_load_error, LASFileCriticalError):
-                    return False
         elif hasattr(las, 'read_error'):
             if type(las.read_error) == dict:
                 for sec_name, error in las.read_error.items():
@@ -2243,8 +2243,6 @@ def error_check(las, critical_only=True):
         return True
     else:
         if hasattr(las, 'open_error'):
-            return False
-        elif hasattr(las, 'section_load_error'):
             return False
         elif hasattr(las, 'read_error'):
             return False

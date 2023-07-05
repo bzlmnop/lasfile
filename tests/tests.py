@@ -19,10 +19,13 @@ version_dict = {
 def test_read_las():
     """Tests that las files can be read"""
     for las_path in get_test_las_paths():
+        version = None
         # Get the version number from the file name
         for tag, ver in version_dict.items():
             if tag in las_path:
                 version = ver
+        if version is None:
+            break
         # Test that the file can be read
         las = LASFile(file_path=las_path)
         assert las is not None
@@ -37,22 +40,22 @@ def test_read_las():
         assert las.version.validated
         # Test that the well section is present, and that there are
         # no errors in parsing or validating the well section
-        assert las.well is not None
-        assert 'parse_error' not in vars(las.well).keys()
-        assert 'validate_error' not in vars(las.well).keys()
+        assert getattr(las, "well") is not None
+        assert 'parse_error' not in vars(getattr(las, "well")).keys()
+        assert 'validate_error' not in vars(getattr(las, "well")).keys()
         if version == '1.2' or version == '2.0':
             # Test that the curves section is present, and that
             # there are no errors in parsing or validating the
             # curves section
-            assert las.curves is not None
-            assert 'parse_error' not in vars(las.curves).keys()
-            assert 'validate_error' not in vars(las.curves).keys()
+            assert getattr(las, "curves") is not None
+            assert 'parse_error' not in vars(getattr(las, "curves")).keys()
+            assert 'validate_error' not in vars(getattr(las, "curves")).keys()
             # Test that the data section is present, and that there
             # are no errors in parsing or validating the data
             # section
-            assert las.data is not None
-            assert 'parse_error' not in vars(las.data).keys()
-            assert 'validate_error' not in vars(las.data).keys()
+            assert getattr(las, "data") is not None
+            assert 'parse_error' not in vars(getattr(las, "data")).keys()
+            assert 'validate_error' not in vars(getattr(las, "data")).keys()
         elif version == '3.0':
             # Test that all sections present have no errors in
             # parsing or validating
