@@ -2202,7 +2202,7 @@ def error_check(las, critical_only=True):
                 return False
         elif hasattr(las, 'section_load_error'):
             if type(las.section_load_error) == dict:
-                for error in las.section_load_error:
+                for sec_name, error in las.section_load_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
             elif type(las.section_load_error) == Exception:
@@ -2210,7 +2210,7 @@ def error_check(las, critical_only=True):
                     return False
         elif hasattr(las, 'read_error'):
             if type(las.read_error) == dict:
-                for error in las.read_error:
+                for sec_name, error in las.read_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
             elif type(las.read_error) == Exception:
@@ -2218,7 +2218,7 @@ def error_check(las, critical_only=True):
                     return False
         elif hasattr(las, 'version_error'):
             if type(las.version_error) == dict:
-                for error in las.version_error:
+                for sec_name, error in las.version_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
             elif type(las.version_error) == Exception:
@@ -2226,7 +2226,7 @@ def error_check(las, critical_only=True):
                     return False
         elif hasattr(las, 'parse_error'):
             if type(las.parse_error) == dict:
-                for error in las.parse_error:
+                for sec_name, error in las.parse_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
             elif type(las.parse_error) == Exception:
@@ -2234,14 +2234,13 @@ def error_check(las, critical_only=True):
                     return False
         elif hasattr(las, 'validate_error'):
             if type(las.validate_error) == dict:
-                for error in las.validate_error:
+                for sec_name, error in las.validate_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
             elif type(las.validate_error) == Exception:
                 if isinstance(las.validate_error, LASFileCriticalError):
                     return False
-        else:
-            return True
+        return True
     else:
         if hasattr(las, 'open_error'):
             return False
@@ -2255,5 +2254,4 @@ def error_check(las, critical_only=True):
             return False
         elif hasattr(las, 'validate_error'):
             return False
-        else:
-            return True
+        return True
