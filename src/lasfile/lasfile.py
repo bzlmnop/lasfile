@@ -1802,40 +1802,6 @@ class LASFile():
 
     delimiter : str
         Delimiter used in the LAS file.
-
-    read_error : str
-        Error message generated if an error occurs while reading the
-        file.
-
-    parse_error : str
-        Error message generated if an error occurs while parsing the
-        file.
-
-    parse_tb : str
-        Traceback information if an error occurs while parsing the file.
-
-    validate_error : str
-        Error message generated if an error occurs while validating the
-        file.
-
-    validate_tb : str
-        Traceback information if an error occurs while validating the
-        file.
-
-    Methods
-    -------
-    __init__(file_path: Optional[str]=None, always_try_split: bool=False)
-        Initializes a LASFile instance. If a file path is
-        provided, tries to read and split the LAS file into sections.
-
-    validate_defs_and_data()
-        Ensures the congruency between the definition and
-        data sections in the LAS file.
-
-    __str__()
-        Returns a human-readable string representation of
-        the LASFile instance, including error messages if
-        any errors occurred during initialization.
     """
     def __init__(self, file_path=None, always_try_split=False):
         if file_path is not None:
@@ -2034,10 +2000,11 @@ class LASFile():
                             self.validate_error[section.name] = (
                                 section.validate_error
                             )
+        self.ensure_curve_and_data_congruency()
         return
 
     # Check for definition/curve and data column congruency
-    def validate_defs_and_data(self):
+    def ensure_curve_and_data_congruency(self):
         # Find data sections
         for section in self.sections:
             # Check if the section is a standard data section
@@ -2198,8 +2165,9 @@ def error_check(las, critical_only=True):
     bool
         True if no errors are found, False if any errors are found
     """
-    # Check if the las object has any errors and if critical_only is True,
-    # if any are of type LASFileCriticalError return False when one is found,
+    # Check if an las object, either LASSection or LASFile, has any
+    # errors and if critical_only is True, if any are of type
+    # LASFileCriticalError return False when one is found,
     # otherwise return False when any error is found.
     if critical_only:
         if hasattr(las, 'open_error'):
