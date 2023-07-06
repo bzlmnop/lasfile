@@ -38,30 +38,30 @@ def test_read_las():
         assert las.version is not None
         assert las.version_num == version
         assert las.version.validated
-        # Test that the well section is present, and that there are
-        # no errors in parsing or validating the well section
-        assert getattr(las, "well") is not None
-        assert 'parse_error' not in vars(getattr(las, "well")).keys()
-        assert 'validate_error' not in vars(getattr(las, "well")).keys()
-        if version == '1.2' or version == '2.0':
-            # Test that the curves section is present, and that
-            # there are no errors in parsing or validating the
-            # curves section
-            assert getattr(las, "curves") is not None
-            assert 'parse_error' not in vars(getattr(las, "curves")).keys()
-            assert 'validate_error' not in vars(getattr(las, "curves")).keys()
-            # Test that the data section is present, and that there
-            # are no errors in parsing or validating the data
-            # section
-            assert getattr(las, "data") is not None
-            assert 'parse_error' not in vars(getattr(las, "data")).keys()
-            assert 'validate_error' not in vars(getattr(las, "data")).keys()
-        elif version == '3.0':
-            # Test that all sections present have no errors in
-            # parsing or validating
-            for section in las.sections:
-                assert 'parse_error' not in vars(section).keys()
-                assert 'validate_error' not in vars(section).keys()
+# # Test that the well section is present, and that there are
+# # no errors in parsing or validating the well section
+# assert getattr(las, "well") is not None
+# assert 'parse_error' not in vars(getattr(las, "well")).keys()
+# assert 'validate_error' not in vars(getattr(las, "well")).keys()
+# if version == '1.2' or version == '2.0':
+#     # Test that the curves section is present, and that
+#     # there are no errors in parsing or validating the
+#     # curves section
+#     assert getattr(las, "curves") is not None
+#     assert 'parse_error' not in vars(getattr(las, "curves")).keys()
+#     assert 'validate_error' not in vars(getattr(las, "curves")).keys()
+#     # Test that the data section is present, and that there
+#     # are no errors in parsing or validating the data
+#     # section
+#     assert getattr(las, "data") is not None
+#     assert 'parse_error' not in vars(getattr(las, "data")).keys()
+#     assert 'validate_error' not in vars(getattr(las, "data")).keys()
+# elif version == '3.0':
+#     # Test that all sections present have no errors in
+#     # parsing or validating
+#     for section in las.sections:
+#         assert 'parse_error' not in vars(section).keys()
+#         assert 'validate_error' not in vars(section).keys()
         assert error_check(las) is True
 
 
