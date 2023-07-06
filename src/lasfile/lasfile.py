@@ -2133,7 +2133,6 @@ def api_from_las(input):
         las = input
     else:
         las = LASFile()
-    # print(las.file_path)
     # If the las has a well section, try to get the api from it
     if hasattr(las, 'well'):
         try:
@@ -2142,10 +2141,8 @@ def api_from_las(input):
             mask = getattr(las, "well").df['mnemonic'].str.lower().isin(
                 ['uwi', 'api']
             )
-            # print(mask)
             # Filter the DataFrame using the mask
             filtered_df = getattr(las, "well").df[mask]
-            # print(filtered_df)
             # Get the corresponding values for the matched mnemonics
             matched_values = filtered_df['value'].tolist()
 
@@ -2162,7 +2159,7 @@ def api_from_las(input):
             # Remove Null values from valid_values
             valid_values = [x for x in valid_values if x is not None]
 
-            # if there are matched values, check if they have the same
+            # If there are matched values, check if they have the same
             # first 10 characters
             if len(valid_values) > 0:
                 if all(
