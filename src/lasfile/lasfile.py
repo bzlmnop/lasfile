@@ -2039,7 +2039,10 @@ class LASFile():
                         if not hasattr(self, 'validate_error'):
                             self.validate_error = {}
                             self.validate_error['curves'] = (
-                                "Curves and data sections are not congruent."
+                                LASFileCriticalError(
+                                    "Curves and data sections are not "
+                                    "congruent."
+                                )
                             )
                     # Check if there are repeated curve mnemonics in the
                     # definition section and if there are, set the
@@ -2051,7 +2054,9 @@ class LASFile():
                         if not hasattr(self, 'validate_error'):
                             self.validate_error = {}
                             self.validate_error['curves'] = (
-                                "Curve mnemonics are not unique."
+                                LASFileCriticalError(
+                                    "Curve mnemonics are not unique."
+                                )
                             )
 
     def __str__(self):
