@@ -2037,6 +2037,7 @@ class LASFile():
                     # error
                     else:
                         if not hasattr(self, 'validate_error'):
+                            self.validate_error = {}
                             self.validate_error['curves'] = (
                                 "Curves and data sections are not congruent."
                             )
@@ -2048,6 +2049,7 @@ class LASFile():
                         != def_rows
                     ):
                         if not hasattr(self, 'validate_error'):
+                            self.validate_error = {}
                             self.validate_error['curves'] = (
                                 "Curve mnemonics are not unique."
                             )
