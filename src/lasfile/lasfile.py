@@ -1382,9 +1382,17 @@ class LASData():
             return
         if wrap:
             # If the data is wrapped...
+            # Remove leading and trailing whitespace from depth lines;
+            # lines with only one value.
+            pattern = r'^\s*(\d+\.\d+)\s*$'
+            processed_data = re.sub(pattern, r'\1', self.raw_data, flags=re.M)
+
+            # Remove trailing whitespace from all lines
+            processed_data = re.sub(r'\s*$', '', processed_data, flags=re.M)
+
             # Replace the newline characters before each depth value
             # with a unique separator
-            processed_data = re.sub(r'\n(?=\d)', ' | ', self.raw_data)
+            processed_data = re.sub(r'\n(?=\d)', ' | ', processed_data)
 
             # Replace all newline characters with space
             processed_data = processed_data.replace('\n', ' ')
