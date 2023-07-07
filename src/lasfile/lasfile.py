@@ -2176,10 +2176,12 @@ def error_check(las, critical_only=True):
     # LASFileCriticalError return False when one is found,
     # otherwise return False when any error is found.
     if critical_only:
+        # Check if the las object has an open_error
         if hasattr(las, 'open_error'):
             if isinstance(las.open_error, LASFileCriticalError):
                 return False
-        elif hasattr(las, 'read_error'):
+        # Check if the las object has a read_error
+        if hasattr(las, 'read_error'):
             if type(las.read_error) == dict:
                 for sec_name, error in las.read_error.items():
                     if isinstance(error, LASFileCriticalError):
@@ -2187,7 +2189,8 @@ def error_check(las, critical_only=True):
             elif type(las.read_error) == Exception:
                 if isinstance(las.read_error, LASFileCriticalError):
                     return False
-        elif hasattr(las, 'version_error'):
+        # Check if the las object has a version_error
+        if hasattr(las, 'version_error'):
             if type(las.version_error) == dict:
                 for sec_name, error in las.version_error.items():
                     if isinstance(error, LASFileCriticalError):
@@ -2195,7 +2198,12 @@ def error_check(las, critical_only=True):
             elif type(las.version_error) == Exception:
                 if isinstance(las.version_error, LASFileCriticalError):
                     return False
-        elif hasattr(las, 'parse_error'):
+        # Check if the las object has a split_error
+        if hasattr(las, 'split_error'):
+            if isinstance(las.split_error, LASFileCriticalError):
+                return False
+        # Check if the las object has a parse_error
+        if hasattr(las, 'parse_error'):
             if type(las.parse_error) == dict:
                 for sec_name, error in las.parse_error.items():
                     if isinstance(error, LASFileCriticalError):
@@ -2203,24 +2211,29 @@ def error_check(las, critical_only=True):
             elif type(las.parse_error) == Exception:
                 if isinstance(las.parse_error, LASFileCriticalError):
                     return False
-        elif hasattr(las, 'validate_error'):
+        # Check if the las object has a validate_error
+        if hasattr(las, 'validate_error'):
             if type(las.validate_error) == dict:
                 for sec_name, error in las.validate_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
-            elif type(las.validate_error) == Exception:
+            if type(las.validate_error) == Exception:
                 if isinstance(las.validate_error, LASFileCriticalError):
                     return False
+        # If no critical errors are found, return True
         return True
     else:
+        # Check if the las object has any errors
         if hasattr(las, 'open_error'):
             return False
-        elif hasattr(las, 'read_error'):
+        if hasattr(las, 'read_error'):
             return False
-        elif hasattr(las, 'version_error'):
+        if hasattr(las, 'version_error'):
             return False
-        elif hasattr(las, 'parse_error'):
+        if hasattr(las, 'split_error'):
             return False
-        elif hasattr(las, 'validate_error'):
+        if hasattr(las, 'parse_error'):
+            return False
+        if hasattr(las, 'validate_error'):
             return False
         return True
