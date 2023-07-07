@@ -340,7 +340,7 @@ def get_version_section(data,
                     raise MissingCriticalMnemonicError(
                         f"Could not get WRAP: {str(e)}"
                     )
-        elif version_num == "3.0":
+        if version_num == "3.0":
             try:
                 dlm_val = df.loc[df['mnemonic'] == "DLM", "value"].values[0]
             except Exception as e:
@@ -863,7 +863,6 @@ def parse_data_section(raw_data, version_num, wrap, delimiter=None):
     -------
     loaded_data : LASData
         The loaded data as a LASData object.
-
     """
     filtered_data = re.sub(r'^[#~].*\n', '', raw_data, flags=re.MULTILINE)
     loaded_data = LASData(
