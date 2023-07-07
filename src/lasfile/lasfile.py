@@ -1788,27 +1788,96 @@ class LASFile():
     """
     Class representing a Log ASCII Standard (LAS) file.
 
-    This class provides methods and attributes for
-    reading, parsing,
-    validating, and handling a LAS file.
+    This class provides methods for reading an LAS file, parsing its
+    sections, validating those sections, and handling errors that occur
+    during these processes.
 
-    Attributes
+    Attributes:
     ----------
     file_path : str
-        Path to the LAS file.
+        The path of the LAS file.
 
-    sections : list[LASSection]
-        List of LASSection objects, each representing a different
-        section of the LAS file.
+    always_try_split : bool
+        Whether or not to try to split the sections of the LAS file even
+        when errors occur.
+
+    sections : list of LASSection
+        The sections of the LAS file, parsed and validated.
 
     version : LASSection
-        Section of the LAS file containing version information.
+        The version section of the LAS file.
 
     version_num : str
-        Version number of the LAS file.
+        The version number of the LAS file.
+
+    wrap : str
+        The wrap of the LAS file.
 
     delimiter : str
-        Delimiter used in the LAS file.
+        The delimiter used in the LAS file.
+
+    read_error : str
+        Error encountered during reading the file, if any.
+
+    read_tb : str
+        Traceback information for the read error, if any.
+
+    open_error : str
+        Error encountered during opening the file, if any.
+
+    open_tb : str
+        Traceback information for the open error, if any.
+
+    version_error : str
+        Error encountered during extraction of the version section,
+        if any.
+
+    version_tb : str
+        Traceback information for the version error, if any.
+
+    split_error : str
+        Error encountered during splitting of the sections, if any.
+
+    parse_error : dict
+        Errors encountered during parsing of the sections, if any.
+
+    validate_error : dict
+        Errors encountered during validation of the sections, if any.
+
+    errors : dict
+        All errors encountered during the processing of the LAS file.
+
+    Methods:
+    -------
+    __init__(self, file_path=None, always_try_split=False)
+        Initializes the LASFile object, reads the file, parses and validates
+        its sections.
+
+    read_file(self, file_path)
+        Attempts to read the LAS file and handle any errors that occur during
+        this process.
+
+    get_version(self, data)
+        Attempts to extract the version, wrap, and delimiter from the LAS file
+        data.
+
+    get_sections(self, data)
+        Attempts to split the LAS file data into sections.
+
+    parse_and_validate_sections(self, sections_dict)
+        Attempts to parse and validate the sections of the LAS file.
+
+    ensure_curve_and_data_congruency(self)
+        Checks if the definition/curve and data columns of the LAS file are
+        congruent.
+
+    aggregate_errors(self)
+        Aggregates all the errors that occurred during the processing of the
+        LAS file into one dictionary.
+
+    __str__(self)
+        Returns a user-friendly string representation of the LASFile object,
+        including any errors that occurred.
     """
     def __init__(self, file_path=None, always_try_split=False):
         if file_path is not None:
@@ -1826,6 +1895,8 @@ class LASFile():
                 sections_dict = self.get_sections(data)
 
                 self.parse_and_validate_sections(sections_dict)
+
+            self.aggregate_errors()
 
     def read_file(self, file_path):
         # Try to open the file
@@ -2065,6 +2136,23 @@ class LASFile():
                                     "Curve mnemonics are not unique."
                                 )
                             )
+
+    def aggregate_errors(self):
+        # Aggregate all the errors into one dictionary and store it
+        # in lasfile.errors
+        self.errors = {}
+        if hasattr(self, 'open_error'):
+            self.errors['open_error'] = self.open_error
+        if hasattr(self, 'read_error'):
+            self.errors['read_error'] = self.read_error
+        if hasattr(self, 'split_error'):
+            self.errors['split_error'] = self.split_error
+        if hasattr(self, 'version_error'):
+            self.errors['version_error'] = self.version_error
+        if hasattr(self, 'parse_error'):
+            self.errors['parse_error'] = self.parse_error
+        if hasattr(self, 'validate_error'):
+            self.errors['validate_error'] = self.validate_error
 
     def __str__(self):
         s = f"LASFile: {self.file_path}\n"
