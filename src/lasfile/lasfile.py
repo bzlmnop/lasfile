@@ -2009,6 +2009,7 @@ class LASFile():
                 # Skip the version section and get the section type
                 if name == 'version':
                     continue
+                # Get the section type
                 if (
                     name in header_section_names or
                     '_parameters' in name or
@@ -2055,7 +2056,7 @@ class LASFile():
                         else:
                             self.parse_error = {name: e}
                 # Aggregate parse_errors and validate_errors
-                # from the sections
+                # from all sections
                 for section in self.sections:
                     setattr(self, section.name, section)
                     if hasattr(section, 'parse_error'):
@@ -2078,64 +2079,63 @@ class LASFile():
                             self.validate_error[section.name] = (
                                 section.validate_error
                             )
+        # Run the function to ensure the curve and data sections
+        # have the same number of curve mnemonics/data columns
         self.ensure_curve_and_data_congruency()
         return
 
-    # Check for definition/curve and data column congruency
     def ensure_curve_and_data_congruency(self):
-        # Find data sections
-        for section in self.sections:
-            # Check if the section is a standard data section
-            if section.name == 'data' and section.type == 'data':
-                # Check that the curves and data sections were parsed
-                # correctly into dataframes
-                if (
-                    hasattr(getattr(self, "curves"), 'df') and
-                    hasattr(getattr(self, "data"), 'df')
-                ):
-                    # The related definition section should be 'curves'
-                    # so, get the rows/cols
-                    def_rows = getattr(self, "curves").df.shape[0]
-                    data_cols = getattr(self, "data").df.shape[1]
-                    # If the number of rows/curve definitions in the
-                    # definition section matches the number of columns
-                    # in the data section, rename the columns of the
-                    # data section to the curve mnemonics
-                    if def_rows == data_cols:
-                        getattr(self, "data").df.rename(
-                            columns=dict(zip(
-                                getattr(self, "data").df.columns,
-                                getattr(self, "curves").df.mnemonic.values
-                            )),
-                            inplace=True
+        """Check for definition/curve and data column congruency"""
+        # Check that the curves and data sections exist
+        if hasattr(self, "curves") and hasattr(self, "data"):
+            # Check that the curves and data sections were parsed
+            # correctly into dataframes
+            if (
+                hasattr(getattr(self, "curves"), 'df') and
+                hasattr(getattr(self, "data"), 'df')
+            ):
+                # Get the number of rows/curve definitions and the
+                # number of columns/data points
+                def_rows = getattr(self, "curves").df.shape[0]
+                data_cols = getattr(self, "data").df.shape[1]
+                # If the number of rows/curve definitions in the
+                # definition section matches the number of columns in
+                # the data section, rename the columns of the data
+                # section to the curve mnemonics
+                if def_rows == data_cols:
+                    getattr(self, "data").df.rename(
+                        columns=dict(zip(
+                            getattr(self, "data").df.columns,
+                            getattr(self, "curves").df.mnemonic.values
+                        )),
+                        inplace=True
+                    )
+                # If the number of rows/curve definitions in the
+                # definition section does not match the number of
+                # columns in the data section, set a validation error
+                else:
+                    if not hasattr(self, 'validate_error'):
+                        self.validate_error = {}
+                        self.validate_error['curves'] = (
+                            LASFileCriticalError(
+                                "Curves and data sections are not "
+                                "congruent."
+                            )
                         )
-                    # If the number of rows/curve definitions in the
-                    # definition section does not match the number of
-                    # columns in the data section, set a validation
-                    # error
-                    else:
-                        if not hasattr(self, 'validate_error'):
-                            self.validate_error = {}
-                            self.validate_error['curves'] = (
-                                LASFileCriticalError(
-                                    "Curves and data sections are not "
-                                    "congruent."
-                                )
+                # Check if there are repeated curve mnemonics in the
+                # definition section and if there are, set the
+                # validation error
+                if (
+                    len(getattr(self, "curves").df.mnemonic.unique())
+                    != def_rows
+                ):
+                    if not hasattr(self, 'validate_error'):
+                        self.validate_error = {}
+                        self.validate_error['curves'] = (
+                            LASFileCriticalError(
+                                "Curve mnemonics are not unique."
                             )
-                    # Check if there are repeated curve mnemonics in the
-                    # definition section and if there are, set the
-                    # validation error
-                    if (
-                        len(getattr(self, "curves").df.mnemonic.unique())
-                        != def_rows
-                    ):
-                        if not hasattr(self, 'validate_error'):
-                            self.validate_error = {}
-                            self.validate_error['curves'] = (
-                                LASFileCriticalError(
-                                    "Curve mnemonics are not unique."
-                                )
-                            )
+                        )
 
     def aggregate_errors(self):
         # Aggregate all the errors into one dictionary and store it
