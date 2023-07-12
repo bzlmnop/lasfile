@@ -2344,6 +2344,10 @@ def error_check(las, critical_only=True):
                     for error in error_list:
                         if isinstance(error, LASFileCriticalError):
                             return False
+            if type(las.validate_error) == list:
+                for error in las.validate_error:
+                    if isinstance(error, LASFileCriticalError):
+                        return False
             if type(las.validate_error) == Exception:
                 if isinstance(las.validate_error, LASFileCriticalError):
                     return False
