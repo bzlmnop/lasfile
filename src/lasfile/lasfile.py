@@ -2340,9 +2340,10 @@ def error_check(las, critical_only=True):
         # Check if the las object has a validate_error
         if hasattr(las, 'validate_error'):
             if type(las.validate_error) == dict:
-                for sec_name, error in las.validate_error.items():
-                    if isinstance(error, LASFileCriticalError):
-                        return False
+                for sec_name, error_list in las.validate_error.items():
+                    for error in error_list:
+                        if isinstance(error, LASFileCriticalError):
+                            return False
             if type(las.validate_error) == Exception:
                 if isinstance(las.validate_error, LASFileCriticalError):
                     return False
