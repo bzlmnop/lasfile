@@ -2002,11 +2002,12 @@ class LASFile():
                     return
 
     def parse_and_validate_sections(self, sections_dict):
-        # If it split correctly generate las section items
-        # from the strings
+        # If it split correctly and therefore the sections_dict is not
+        # None, then generate las section items from the strings
         if sections_dict is not None:
+            # Get the section name and raw text data from sections_dict
             for name, raw_data in sections_dict.items():
-                # Skip the version section and get the section type
+                # Skip the version section, it should already be parsed
                 if name == 'version':
                     continue
                 # Get the section type
@@ -2080,21 +2081,16 @@ class LASFile():
                             # not a list, make it a list and append
                             # the new error
                             else:
-                                setattr(
-                                    self.parse_error,
-                                    section.name,
-                                    [
-                                        self.parse_error[section.name],
-                                        section.parse_error
-                                    ]
-                                )
+                                current_error = self.parse_error[section.name]
+                                self.parse_error[section.name] = [
+                                    current_error,
+                                    section.parse_error
+                                ]
                         # If the parse_error dictionary doesn't have
                         # an entry for the current section, add it with
                         # the current section's parse_error
                         else:
-                            setattr(
-                                self.parse_error,
-                                section.name,
+                            self.parse_error[section.name] = (
                                 section.parse_error
                             )
                     # Aggregate validate_errors
@@ -2117,21 +2113,15 @@ class LASFile():
                             # not a list, make it a list and append
                             # the new error
                             else:
-                                setattr(
-                                    self.validate_error,
-                                    section.name,
-                                    [
-                                        self.validate_error[section.name],
-                                        section.validate_error
-                                    ]
-                                )
+                                self.validate_error[section.name] = [
+                                    self.validate_error[section.name],
+                                    section.validate_error
+                                ]
                         # If the validate_error dictionary doesn't have
                         # an entry for the current section, add it with
                         # the current section's validate_error
                         else:
-                            setattr(
-                                self.validate_error,
-                                section.name,
+                            self.validate_error[section.name] = (
                                 section.validate_error
                             )
         # Run the function to ensure the curve and data sections
