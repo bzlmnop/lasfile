@@ -2058,25 +2058,80 @@ class LASFile():
                 # Aggregate parse_errors and validate_errors
                 # from all sections
                 for section in self.sections:
+                    # Set each section as an attribute of the LASFile
                     setattr(self, section.name, section)
+                    # Aggregate parse_errors
+                    # If the current section has parse errors
                     if hasattr(section, 'parse_error'):
+                        # Instantiate the parse_error attribute if it
+                        # doesn't exist
                         if not hasattr(self, 'parse_error'):
-                            self.parse_error = {
-                                section.name: section.parse_error
-                            }
+                            setattr(self, 'parse_error', {})
+                        # If the parse_error dictionary already has an
+                        # entry for the current section
+                        if hasattr(self.parse_error, section.name):
+                            # If the current section's parse_error is a
+                            # list append the new error to the list
+                            if type(self.parse_error) == list:
+                                self.parse_error.append(
+                                    section.parse_error
+                                )
+                            # If the current section's parse_error is
+                            # not a list, make it a list and append
+                            # the new error
+                            else:
+                                setattr(
+                                    self.parse_error,
+                                    section.name,
+                                    [
+                                        self.parse_error[section.name],
+                                        section.parse_error
+                                    ]
+                                )
+                        # If the parse_error dictionary doesn't have
+                        # an entry for the current section, add it with
+                        # the current section's parse_error
                         else:
-                            self.parse_error[section.name] = (
+                            setattr(
+                                self.parse_error,
+                                section.name,
                                 section.parse_error
                             )
+                    # Aggregate validate_errors
+                    # If the current section has validate errors
                     if hasattr(section, 'validate_error'):
+                        # Instantiate the validate_error attribute if it
+                        # doesn't exist
                         if not hasattr(self, 'validate_error'):
-                            self.validate_error = {
-                                section.name: (
+                            setattr(self, 'validate_error', {})
+                        # If the validate_error dictionary already has an
+                        # entry for the current section
+                        if hasattr(self.validate_error, section.name):
+                            # If the current section's validate_error is a
+                            # list append the new error to the list
+                            if type(self.validate_error) == list:
+                                self.validate_error.append(
                                     section.validate_error
                                 )
-                            }
+                            # If the current section's validate_error is
+                            # not a list, make it a list and append
+                            # the new error
+                            else:
+                                setattr(
+                                    self.validate_error,
+                                    section.name,
+                                    [
+                                        self.validate_error[section.name],
+                                        section.validate_error
+                                    ]
+                                )
+                        # If the validate_error dictionary doesn't have
+                        # an entry for the current section, add it with
+                        # the current section's validate_error
                         else:
-                            self.validate_error[section.name] = (
+                            setattr(
+                                self.validate_error,
+                                section.name,
                                 section.validate_error
                             )
         # Run the function to ensure the curve and data sections
@@ -2116,6 +2171,24 @@ class LASFile():
                 else:
                     if not hasattr(self, 'validate_error'):
                         self.validate_error = {}
+                    if hasattr(self.validate_error, 'curves'):
+                        if type(self.validate_error['curves']) == list:
+                            self.validate_error['curves'].append(
+                                LASFileCriticalError(
+                                    "Curves and data sections are not "
+                                    "congruent."
+                                )
+                            )
+                        else:
+                            self.validate_error['curves'] = [
+                                self.validate_error['curves'],
+                                LASFileCriticalError(
+                                    "Curves and data sections are not "
+                                    "congruent."
+                                )
+                            ]
+                    else:
+                        # Set the curves section validation error
                         self.validate_error['curves'] = (
                             LASFileCriticalError(
                                 "Curves and data sections are not "
@@ -2131,6 +2204,22 @@ class LASFile():
                 ):
                     if not hasattr(self, 'validate_error'):
                         self.validate_error = {}
+                    if hasattr(self.validate_error, 'curves'):
+                        if type(self.validate_error['curves']) == list:
+                            self.validate_error['curves'].append(
+                                LASFileCriticalError(
+                                    "Curve mnemonics are not unique."
+                                )
+                            )
+                        else:
+                            self.validate_error['curves'] = [
+                                self.validate_error['curves'],
+                                LASFileCriticalError(
+                                    "Curve mnemonics are not unique."
+                                )
+                            ]
+                    else:
+                        # Set the curves section validation error
                         self.validate_error['curves'] = (
                             LASFileCriticalError(
                                 "Curve mnemonics are not unique."
