@@ -1964,7 +1964,10 @@ class LASFile():
 
     def get_sections(self, data):
         # Try to split the file into sections
-        if self.version_num is not None and self.version_num != '':
+        if (
+            getattr(self, 'version_num') is not None and
+            getattr(self, 'version_num') != ''
+        ):
             s = split_sections(data, self.version_num)
             if (
                 s['version'] != '' and s['version'] is not None and
