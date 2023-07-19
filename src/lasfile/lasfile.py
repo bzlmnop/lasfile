@@ -1964,24 +1964,25 @@ class LASFile():
 
     def get_sections(self, data):
         # Try to split the file into sections
-        if (
-            getattr(self, 'version_num') is not None and
-            getattr(self, 'version_num') != ''
-        ):
-            s = split_sections(data, self.version_num)
+        if hasattr(self, 'version_num'):
             if (
-                s['version'] != '' and s['version'] is not None and
-                s['well'] != '' and s['well'] is not None
+                getattr(self, 'version_num') is not None and
+                getattr(self, 'version_num') != ''
             ):
-                return s
-            else:
-                self.split_error = LASFileSplitError(
-                    "Couldn't split into minimum required "
-                    "sections: Version and well sections "
-                    "are empty."
-                )
-                if not self.always_try_split:
-                    return
+                s = split_sections(data, self.version_num)
+                if (
+                    s['version'] != '' and s['version'] is not None and
+                    s['well'] != '' and s['well'] is not None
+                ):
+                    return s
+                else:
+                    self.split_error = LASFileSplitError(
+                        "Couldn't split into minimum required "
+                        "sections: Version and well sections "
+                        "are empty."
+                    )
+                    if not self.always_try_split:
+                        return
         elif self.always_try_split:
             try:
                 s = split_sections(data, '2.0')
