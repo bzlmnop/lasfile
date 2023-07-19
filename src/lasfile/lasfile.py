@@ -620,7 +620,13 @@ def split_sections(data, version_num, known_secs=known_secs):
         for section in sections:
             # Get the title line/header of the section
             section_found = False
-            title_line_end = section.index('\n')
+            try:
+                title_line_end = section.index('\n')
+            except Exception as e:
+                raise LASFileCriticalError(
+                    f"Could not find the end of "
+                    f"the title line for a section: {e}"
+                    )
             title_line = section[:title_line_end].strip()
             # Parse the title line to get the section title
             section_title = parse_title_line(
