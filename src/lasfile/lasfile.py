@@ -1893,10 +1893,9 @@ class LASFile():
         Returns a user-friendly string representation of the LASFile object,
         including any errors that occurred.
     """
-    def __init__(self, file_path=None, always_try_split=False):
+    def __init__(self, file_path=None):
         if file_path is not None:
             self.file_path = file_path
-            self.always_try_split = always_try_split
             self.sections = []
             # Try to open and read the file into a string
             data = self.read_file(self.file_path)
@@ -1951,10 +1950,8 @@ class LASFile():
             self.delimiter = self.version.delimiter
             self.sections.append(self.version)
             return
-        # If a version couldn't be extracted, and the user
-        # has decided to always try to split the sections
-        # anyway set the version to None otherwise return
-        # the LASFile object
+        # If a version couldn't be extracted, set the version error and
+        # traceback, and return
         except Exception as e:
             self.version_error = LASFileCriticalError(
                 f"Couldn't get version: {str(e)}"
@@ -1963,10 +1960,8 @@ class LASFile():
             self.version_tb = LASFileCriticalError(
                 f"Couldn't get version: {tb}"
             )
-            if self.always_try_split:
-                self.version_num = None
-            else:
-                return
+            self.version_num = None
+            return
 
     def get_sections(self, data):
         # Try to split the file into sections
@@ -1982,67 +1977,40 @@ class LASFile():
                         f"Couldn't split into sections: {str(e)}"
                     )
                     self.split_tb = traceback.format_exc()
-                    s = {'version': '', 'well': '', 'curves': '', 'data': ''}
+                    return
                 if (
-                    s['version'] != '' and s['version'] is not None and
-                    s['well'] != '' and s['well'] is not None and
-                    s['curves'] != '' and s['curves'] is not None and
-                    s['data'] != '' and s['data'] is not None
+                    'version' in s.keys() and
+                    'well' in s.keys() and
+                    'curves' in s.keys() and
+                    'data' in s.keys()
                 ):
-                    return s
+                    if (
+                        s['version'] != '' and s['version'] is not None and
+                        s['well'] != '' and s['well'] is not None and
+                        s['curves'] != '' and s['curves'] is not None and
+                        s['data'] != '' and s['data'] is not None
+                    ):
+                        return s
+                    else:
+                        self.split_error = LASFileSplitError(
+                            "Couldn't split into minimum required "
+                            "sections: Version, Well, Curves or Data "
+                            "sections is empty."
+                        )
+                        return
                 else:
                     self.split_error = LASFileSplitError(
                         "Couldn't split into minimum required "
                         "sections: Version, Well, Curves or Data "
-                        "sections is empty."
-                    )
-                    if not self.always_try_split:
-                        return
-        elif self.always_try_split:
-            try:
-                try:
-                    s = split_sections(data, '2.0')
-                except Exception as e:
-                    self.split_error = LASFileSplitError(
-                        f"Couldn't split into sections: {str(e)}"
-                    )
-                    self.split_tb = traceback.format_exc()
-                    s = {'version': '', 'well': '', 'curves': '', 'data': ''}
-                if (
-                    s['version'] != '' and s['version'] is not None and
-                    s['well'] != '' and s['well'] is not None and
-                    s['curves'] != '' and s['curves'] is not None and
-                    s['data'] != '' and s['data'] is not None
-                ):
-                    return s
-                else:
-                    self.split_error = LASFileSplitError(
-                        "Tried version 2.0 split, but version and "
-                        "well sections are still empty"
-                        )
-                    return
-            except Exception as e:
-                try:
-                    s = split_sections(data, '3.0')
-                except Exception as e:
-                    self.split_error = LASFileSplitError(
-                        f"Couldn't split into sections: {str(e)}"
-                    )
-                    self.split_tb = traceback.format_exc()
-                    s = {'version': '', 'well': '', 'curves': '', 'data': ''}
-                if (
-                    s['version'] != '' and s['version'] is not None and
-                    s['well'] != '' and s['well'] is not None and
-                    s['curves'] != '' and s['curves'] is not None and
-                    s['data'] != '' and s['data'] is not None
-                ):
-                    return s
-                else:
-                    self.split_error = LASFileSplitError(
-                        "Couldn't split into minimum required "
-                        f"sections: {str(e)}"
+                        "sections is missing."
                     )
                     return
+        else:
+            self.split_error = LASFileSplitError(
+                "Couldn't split into minimum required "
+                "sections: Version Number is missing."
+            )
+            return
 
     def parse_and_validate_sections(self, sections_dict):
         # If it split correctly and therefore the sections_dict is not
