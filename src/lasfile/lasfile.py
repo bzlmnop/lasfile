@@ -702,77 +702,94 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
                 line.strip().strip("\n") == ""
             ):
                 continue
-            # Remove whitespace from the line
-            line = line.strip()
-            # Get the mnemonic.
-            # The mnemonic is everything before the first period,
-            # stripped of whitespace.
-            frst_prd = line.index('.')
-            mnemonic = line[:frst_prd].strip()
-            if version_num == '1.2' and mnemonic in [
-                'COMP',
-                'WELL',
-                'FLD',
-                'LOC',
-                'PROV',
-                'SRVC',
-                'DATE',
-                'UWI',
-                'API',
-            ]:
-                # Get the units.
-                # The units are everything between the first period
-                # and the first space after the first period, stripped
-                # of whitespace.
-                line_aft_frst_prd = line[frst_prd+1:]
-                frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
-                units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
-                # Get the value.
-                # The value is everything between the first space after
-                # the first period and the last colon, stripped of whitespace.
-                lst_col = line_aft_frst_prd.rindex(':')
-                descr = line_aft_frst_prd[
-                    frst_spc_aft_frst_prd:lst_col
-                ].strip()
-                # Get the description.
-                # The description is everything after the last colon,
+            # Try to parse the line
+            try:
+                # Remove whitespace from the line
+                line = line.strip()
+                # Get the mnemonic.
+                # The mnemonic is everything before the first period,
                 # stripped of whitespace.
-                value = line_aft_frst_prd[lst_col+1:].strip()
+                frst_prd = line.index('.')
+                mnemonic = line[:frst_prd].strip()
+                if version_num == '1.2' and mnemonic in [
+                    'COMP',
+                    'WELL',
+                    'FLD',
+                    'LOC',
+                    'PROV',
+                    'SRVC',
+                    'DATE',
+                    'UWI',
+                    'API',
+                ]:
+                    # Get the units.
+                    # The units are everything between the first period
+                    # and the first space after the first period,
+                    # stripped of whitespace.
+                    line_aft_frst_prd = line[frst_prd+1:]
+                    frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+                    units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+                    # Get the value.
+                    # The value is everything between the first space
+                    # after the first period and the last colon,
+                    # stripped of whitespace.
+                    lst_col = line_aft_frst_prd.rindex(':')
+                    descr = line_aft_frst_prd[
+                        frst_spc_aft_frst_prd:lst_col
+                    ].strip()
+                    # Get the description.
+                    # The description is everything after the last colon,
+                    # stripped of whitespace.
+                    value = line_aft_frst_prd[lst_col+1:].strip()
+                    results.append(
+                        {
+                            "mnemonic": mnemonic,
+                            "units": units if units != "" else None,
+                            "value": value if value != "" else None,
+                            "description": descr if descr != "" else None
+                        }
+                    )
+                else:
+                    # Get the units.
+                    # The units are everything between the first period
+                    # and the first space after the first period,
+                    # stripped of whitespace.
+                    line_aft_frst_prd = line[frst_prd+1:]
+                    frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+                    units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+                    # Get the value.
+                    # The value is everything between the first space
+                    # after the first period and the last colon,
+                    # stripped of whitespace.
+                    lst_col = line_aft_frst_prd.rindex(':')
+                    value = line_aft_frst_prd[
+                        frst_spc_aft_frst_prd:lst_col
+                    ].strip()
+                    # Get the description.
+                    # The description is everything after the last colon,
+                    # stripped of whitespace.
+                    descr = line_aft_frst_prd[lst_col+1:].strip()
+                    results.append(
+                        {
+                            "mnemonic": mnemonic,
+                            "units": units if units != "" else None,
+                            "value": value if value != "" else None,
+                            "description": descr if descr != "" else None,
+                            "errors": None
+                        }
+                    )
+            except Exception as e:
                 results.append(
-                    {
-                        "mnemonic": mnemonic,
-                        "units": units if units != "" else None,
-                        "value": value if value != "" else None,
-                        "description": descr if descr != "" else None
-                    }
-                )
-            else:
-                # Get the units.
-                # The units are everything between the first period
-                # and the first space after the first period, stripped
-                # of whitespace.
-                line_aft_frst_prd = line[frst_prd+1:]
-                frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
-                units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
-                # Get the value.
-                # The value is everything between the first space after
-                # the first period and the last colon, stripped of whitespace.
-                lst_col = line_aft_frst_prd.rindex(':')
-                value = line_aft_frst_prd[
-                    frst_spc_aft_frst_prd:lst_col
-                ].strip()
-                # Get the description.
-                # The description is everything after the last colon,
-                # stripped of whitespace.
-                descr = line_aft_frst_prd[lst_col+1:].strip()
-                results.append(
-                    {
-                        "mnemonic": mnemonic,
-                        "units": units if units != "" else None,
-                        "value": value if value != "" else None,
-                        "description": descr if descr != "" else None
-                    }
-                )
+                        {
+                            "mnemonic": mnemonic,
+                            "units": units if units != "" else None,
+                            "value": value if value != "" else None,
+                            "description": descr if descr != "" else None,
+                            "errors": LASFileError(
+                                f"Error parsing header line '{line}'. {e}"
+                            )
+                        }
+                    )
         return DataFrame(results)
     elif version_num == '3.0':
         for line in lines:
@@ -789,55 +806,73 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
                 line.strip().strip("\n") == ""
             ):
                 continue
-            # Remove whitespace from the line
-            line = line.strip()
-            # Get the mnemonic.
-            # The mnemonic is everything before the
-            # first period, stripped of whitespace
-            frst_prd = line.index('.')
-            mnemonic = line[:frst_prd].strip()
-            # Get the units.
-            # The units are everything between the first period and the
-            # first space after the first period, stripped of whitespace.
-            line_aft_frst_prd = line[frst_prd+1:]
-            frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
-            units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
-            # Get the value.
-            # The value is everything between the first space after the
-            # first period and the last colon, stripped of whitespace.
-            lst_col = line_aft_frst_prd.rindex(':')
-            value = line_aft_frst_prd[frst_spc_aft_frst_prd:lst_col].strip()
-            # Get the description, format, and associations.
-            # The description is everything after the last colon and
-            # before the first brace or pipe, if no braces are present,
-            # stripped of whitespace.
-            line_aft_lst_col = line_aft_frst_prd[lst_col+1:]
-            if '{' in line_aft_lst_col and '}' in line_aft_lst_col:
-                frst_brc_aft_lst_col = line_aft_lst_col.index('{')
-                descr = line_aft_lst_col[:frst_brc_aft_lst_col]
-                line_aft_frst_brc = line_aft_lst_col[frst_brc_aft_lst_col+1:]
-                clsng_brc = line_aft_frst_brc.rindex('}')
-                format = line_aft_frst_brc[:clsng_brc].strip()
-                line_aft_clsng_brc = line_aft_frst_brc[clsng_brc+1:]
-                if '|' in line_aft_clsng_brc:
-                    bar = line_aft_clsng_brc.index('|')
-                    assocs = line_aft_clsng_brc[bar+1:].strip()
-            elif '|' in line_aft_lst_col:
-                bar = line_aft_lst_col.index('|')
-                assocs = line_aft_lst_col[bar+1:].strip()
-            else:
-                descr = line_aft_frst_prd[lst_col+1:].strip()
-            # Add the parsed values to the results list
-            results.append(
-                {
-                    "mnemonic": mnemonic,
-                    "units": units if units != "" else None,
-                    "value": value if value != "" else None,
-                    "description": descr if descr != "" else None,
-                    "format": format if format != "" else None,
-                    "associations": assocs if assocs != "" else None
-                }
-            )
+            # Try to parse the line
+            try:
+                # Remove whitespace from the line
+                line = line.strip()
+                # Get the mnemonic.
+                # The mnemonic is everything before the
+                # first period, stripped of whitespace
+                frst_prd = line.index('.')
+                mnemonic = line[:frst_prd].strip()
+                # Get the units.
+                # The units are everything between the first period and the
+                # first space after the first period, stripped of whitespace.
+                line_aft_frst_prd = line[frst_prd+1:]
+                frst_spc_aft_frst_prd = line_aft_frst_prd.index(' ')
+                units = line_aft_frst_prd[:frst_spc_aft_frst_prd].strip()
+                # Get the value.
+                # The value is everything between the first space after the
+                # first period and the last colon, stripped of whitespace.
+                lst_col = line_aft_frst_prd.rindex(':')
+                value = (
+                    line_aft_frst_prd[frst_spc_aft_frst_prd:lst_col].strip()
+                )
+                # Get the description, format, and associations.
+                # The description is everything after the last colon and
+                # before the first brace or pipe, if no braces are present,
+                # stripped of whitespace.
+                line_aft_lst_col = line_aft_frst_prd[lst_col+1:]
+                if '{' in line_aft_lst_col and '}' in line_aft_lst_col:
+                    frst_brc_aft_lst_col = line_aft_lst_col.index('{')
+                    descr = line_aft_lst_col[:frst_brc_aft_lst_col]
+                    line_aft_frst_brc = (
+                        line_aft_lst_col[frst_brc_aft_lst_col+1:]
+                    )
+                    clsng_brc = line_aft_frst_brc.rindex('}')
+                    format = line_aft_frst_brc[:clsng_brc].strip()
+                    line_aft_clsng_brc = line_aft_frst_brc[clsng_brc+1:]
+                    if '|' in line_aft_clsng_brc:
+                        bar = line_aft_clsng_brc.index('|')
+                        assocs = line_aft_clsng_brc[bar+1:].strip()
+                elif '|' in line_aft_lst_col:
+                    bar = line_aft_lst_col.index('|')
+                    assocs = line_aft_lst_col[bar+1:].strip()
+                else:
+                    descr = line_aft_frst_prd[lst_col+1:].strip()
+                # Add the parsed values to the results list
+                results.append(
+                    {
+                        "mnemonic": mnemonic,
+                        "units": units if units != "" else None,
+                        "value": value if value != "" else None,
+                        "description": descr if descr != "" else None,
+                        "format": format if format != "" else None,
+                        "associations": assocs if assocs != "" else None
+                    }
+                )
+            except Exception as e:
+                results.append(
+                        {
+                            "mnemonic": mnemonic,
+                            "units": units if units != "" else None,
+                            "value": value if value != "" else None,
+                            "description": descr if descr != "" else None,
+                            "errors": LASFileError(
+                                f"Error parsing header line '{line}'. {e}"
+                            )
+                        }
+                    )
         # Return the results as a DataFrame
         return DataFrame(results)
 
