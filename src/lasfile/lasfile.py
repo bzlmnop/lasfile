@@ -1442,11 +1442,17 @@ class LASData():
                     warnings.simplefilter("always")
                     # Use numpy's genfromtxt to read the data into a
                     # numpy array
-                    self.data = genfromtxt(
-                        f,
-                        delimiter=delim,
-                        invalid_raise=invalid_raise
-                    )
+                    if delim == ' ':
+                        self.data = genfromtxt(
+                            f,
+                            invalid_raise=invalid_raise
+                        )
+                    else:
+                        self.data = genfromtxt(
+                            f,
+                            delimiter=delim,
+                            invalid_raise=invalid_raise
+                        )
                     # Convert the numpy array to a pandas DataFrame
                     self.df = DataFrame(self.data)
                     for warn in w:
@@ -1965,19 +1971,31 @@ class LASFile():
 
     def get_sections(self, data):
         # Try to split the file into sections
+        # Test if a version number was extracted and associated with
+        # the LASFile object
         if hasattr(self, 'version_num'):
+            # If a version number is associated with the LASFile object,
+            # test if it is not None or an empty string
             if (
                 getattr(self, 'version_num') is not None and
                 getattr(self, 'version_num') != ''
             ):
+                # If the version number is not None or an empty string,
+                # try to split the file into sections
                 try:
                     s = split_sections(data, self.version_num)
                 except Exception as e:
+                    # If an error occurs during the splitting of the
+                    # sections, set the split error and traceback, and
+                    # return
                     self.split_error = LASFileSplitError(
                         f"Couldn't split into sections: {str(e)}"
                     )
                     self.split_tb = traceback.format_exc()
                     return
+                # If the sections were split correctly, check that the
+                # minimum required sections are present and not empty
+                # then return the sections dictionary
                 if (
                     'version' in s.keys() and
                     'well' in s.keys() and
