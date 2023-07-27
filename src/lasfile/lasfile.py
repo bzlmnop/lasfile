@@ -2379,15 +2379,28 @@ class LASFile():
                 # section to the curve mnemonics
                 if def_rows == data_cols:
                     # Check if there are repeated curve mnemonics
-                    if not len(curves_df.mnemonic.unique()) == len(curves_df.mnemonic):
+                    if (
+                        not len(
+                            curves_df.mnemonic.unique()
+                        ) == len(
+                            curves_df.mnemonic
+                        )
+                    ):
                         # Get a list of the mnemonics that are repeated
                         repeated_mnemonics = curves_df.mnemonic[
                             curves_df.mnemonic.duplicated(keep=False)
                         ].unique()
-                        # for each unique repeated mnemonic make a df of the repeated mnemonics
+                        # for each unique repeated mnemonic make a df of
+                        # the repeated mnemonics
                         for mnemonic in repeated_mnemonics:
-                            repeated_mnemonics_df = curves_df.loc[curves_df['mnemonic'] == mnemonic]
-                            # for each row in the repeated mnemonics df, append an underscore and the index digit to the end of the mnemonic
+                            repeated_mnemonics_df = (
+                                curves_df.loc[
+                                    curves_df['mnemonic'] == mnemonic
+                                ]
+                            )
+                            # for each row in the repeated mnemonics df,
+                            # append an underscore and the index digit
+                            # to the end of the mnemonic
                             new_data_col_names = repeated_mnemonics_df.columns
                             for index, row in repeated_mnemonics_df.iterrows():
                                 curves_df.loc[index, 'mnemonic'] = (
