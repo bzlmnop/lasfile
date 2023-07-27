@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lasfile"
-version = "0.1.38"
+version = "0.1.39"
 description = "A Python library for reading LAS files."
 readme = "README.md"
 keywords = ["las", "CWLS", "las logs", "petrophysical logs"]
