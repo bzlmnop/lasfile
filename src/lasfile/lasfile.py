@@ -1369,15 +1369,6 @@ def validate_curves(df, version_num):
         of the given LAS version.
     """
     validate_errors = []
-    if version_num == "1.2" or version_num == "2.0" or version_num == "3.0":
-        # Check that there are no repeated mnemonics
-        if not len(df.mnemonic.unique()) == len(df.mnemonic):
-            # Test if it is in the required_sections for the version_num
-            validate_errors.append(
-                LASFileCriticalError(
-                    "Repeated mnemonics in curves section."
-                )
-            )
     # If ther is an errors column, check that there are no errors
     if "errors" in df.columns:
         if not df.errors.isnull().all():
@@ -2380,19 +2371,43 @@ class LASFile():
                 # Get the number of rows/curve definitions and the
                 # number of columns/data points
                 def_rows = getattr(self, "curves").df.shape[0]
+                curves_df = getattr(self, "curves").df
                 data_cols = getattr(self, "data").df.shape[1]
                 # If the number of rows/curve definitions in the
                 # definition section matches the number of columns in
                 # the data section, rename the columns of the data
                 # section to the curve mnemonics
                 if def_rows == data_cols:
-                    getattr(self, "data").df.rename(
-                        columns=dict(zip(
-                            getattr(self, "data").df.columns,
-                            getattr(self, "curves").df.mnemonic.values
-                        )),
-                        inplace=True
-                    )
+                    # Check if there are repeated curve mnemonics
+                    if not len(curves_df.mnemonic.unique()) == len(curves_df.mnemonic):
+                        # Get a list of the mnemonics that are repeated
+                        repeated_mnemonics = curves_df.mnemonic[
+                            curves_df.mnemonic.duplicated(keep=False)
+                        ].unique()
+                        # for each unique repeated mnemonic make a df of the repeated mnemonics
+                        for mnemonic in repeated_mnemonics:
+                            repeated_mnemonics_df = curves_df.loc[curves_df['mnemonic'] == mnemonic]
+                            # for each row in the repeated mnemonics df, append an underscore and the index digit to the end of the mnemonic
+                            new_data_col_names = repeated_mnemonics_df.columns
+                            for index, row in repeated_mnemonics_df.iterrows():
+                                curves_df.loc[index, 'mnemonic'] = (
+                                    f"{row['mnemonic']}_{index}"
+                                )
+                            getattr(self, "data").df.rename(
+                                columns=dict(zip(
+                                    getattr(self, "data").df.columns,
+                                    new_data_col_names
+                                )),
+                                inplace=True
+                            )
+                    else:
+                        getattr(self, "data").df.rename(
+                            columns=dict(zip(
+                                getattr(self, "data").df.columns,
+                                getattr(self, "curves").df.mnemonic.values
+                            )),
+                            inplace=True
+                        )
                 # If the number of rows/curve definitions in the
                 # definition section does not match the number of
                 # columns in the data section, set a validation error
@@ -2407,23 +2422,6 @@ class LASFile():
                         LASFileCriticalError(
                             "Curves and data sections are not "
                             "congruent."
-                        )
-                    )
-                # Check if there are repeated curve mnemonics in the
-                # definition section and if there are, set the
-                # validation error
-                if (
-                    len(getattr(self, "curves").df.mnemonic.unique())
-                    != def_rows
-                ):
-                    getattr(self, 'curves').validate_errors.append(
-                        LASFileCriticalError(
-                            "Curve mnemonics are not unique."
-                        )
-                    )
-                    getattr(self, 'data').validate_errors.append(
-                        LASFileCriticalError(
-                            "Curve mnemonics are not unique."
                         )
                     )
 
