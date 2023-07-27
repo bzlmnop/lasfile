@@ -6,9 +6,10 @@ import re
 import traceback
 from io import StringIO
 from numpy import genfromtxt
-from numpy import array
-from csv import reader
+# from numpy import array
+# from csv import reader
 from pandas import DataFrame
+from pandas import read_csv
 import warnings
 from apinum import APINumber
 
@@ -336,6 +337,9 @@ def get_version_section(data,
                     wrap = True
                 elif wrap_val.upper() == 'NO':
                     wrap = False
+                if "DLM" in df['mnemonic'].values:
+                    dlm_val = df.loc[
+                        df['mnemonic'] == "DLM", "value"].values[0]
             except Exception as e:
                 wrap = None
                 if version_num in ["1.2", "2.0"]:
@@ -1521,7 +1525,6 @@ class LASData():
                     self.data = genfromtxt(
                         f,
                         delimiter=delim,
-
                         invalid_raise=invalid_raise
                     )
                     # Convert the numpy array to a pandas DataFrame
@@ -1545,22 +1548,43 @@ class LASData():
                     # Use numpy's genfromtxt to read the data into a
                     # numpy array
                     if delim == ' ':
-                        self.data = genfromtxt(
+                        # self.data = genfromtxt(
+                        #     f,
+                        #     invalid_raise=invalid_raise
+                        # )
+                        self.df = read_csv(
                             f,
-                            invalid_raise=invalid_raise
+                            delim_whitespace=True,
+                            header=None
                         )
                     elif delim == ',':
-                        csv_data = reader(f, delimiter=delim)
-                        csv_data = list(csv_data)
-                        self.data = array(csv_data)
-                    else:
-                        self.data = genfromtxt(
+                        # csv_data = reader(f, delimiter=delim)
+                        # csv_data = list(csv_data)
+                        # self.data = array(csv_data)
+                        self.df = read_csv(
                             f,
                             delimiter=delim,
-                            invalid_raise=invalid_raise
+                            header=None
+                        )
+                    elif delim == '\t':
+                        # self.data = genfromtxt(
+                        #     f,
+                        #     delimiter=delim,
+                        #     invalid_raise=invalid_raise
+                        # )
+                        self.df = read_csv(
+                            f,
+                            delimiter=delim,
+                            header=None
+                        )
+                    else:
+                        self.df = read_csv(
+                            f,
+                            delim_whitespace=True,
+                            header=None
                         )
                     # Convert the numpy array to a pandas DataFrame
-                    self.df = DataFrame(self.data)
+                    # self.df = DataFrame(self.data)
                     for warn in w:
                         if issubclass(warn.category, UserWarning):
                             # Store any read errors
@@ -2445,6 +2469,8 @@ class LASFile():
                 else:
                     if not hasattr(getattr(self, 'curves'), 'validate_errors'):
                         setattr(getattr(self, 'curves'), 'validate_errors', [])
+                    if not hasattr(getattr(self, 'data'), 'validate_errors'):
+                        setattr(getattr(self, 'data'), 'validate_errors', [])
                     getattr(self, 'curves').validate_errors.append(
                         LASFileCriticalError(
                             "Curves and data sections are not "
