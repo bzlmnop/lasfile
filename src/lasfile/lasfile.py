@@ -6,6 +6,8 @@ import re
 import traceback
 from io import StringIO
 from numpy import genfromtxt
+from numpy import array
+from csv import reader
 from pandas import DataFrame
 import warnings
 from apinum import APINumber
@@ -1370,6 +1372,7 @@ def validate_curves(df, version_num):
     if version_num == "1.2" or version_num == "2.0" or version_num == "3.0":
         # Check that there are no repeated mnemonics
         if not len(df.mnemonic.unique()) == len(df.mnemonic):
+            # Test if it is in the required_sections for the version_num
             validate_errors.append(
                 LASFileCriticalError(
                     "Repeated mnemonics in curves section."
@@ -1384,7 +1387,7 @@ def validate_curves(df, version_num):
                 if row["errors"] is not None:
                     validate_errors.append(
                         LASFileCriticalError(
-                            f"Error parsing curve line '{row['line']}', "
+                            f"Error parsing curve line '{index}', "
                             f"{row['errors']}"
                         )
                     )
@@ -1527,6 +1530,7 @@ class LASData():
                     self.data = genfromtxt(
                         f,
                         delimiter=delim,
+
                         invalid_raise=invalid_raise
                     )
                     # Convert the numpy array to a pandas DataFrame
@@ -1540,8 +1544,8 @@ class LASData():
                                 in str(warn.message).split("\n")
                             ]
                             return
+        # If the data is not wrapped...
         else:
-            # If the data is not wrapped...
             # Create a file-like object from the string
             with StringIO(self.raw_data) as f:
                 # Catch any warnings that occur when reading the data
@@ -1554,6 +1558,10 @@ class LASData():
                             f,
                             invalid_raise=invalid_raise
                         )
+                    elif delim == ',':
+                        csv_data = reader(f, delimiter=delim)
+                        csv_data = list(csv_data)
+                        self.data = array(csv_data)
                     else:
                         self.data = genfromtxt(
                             f,
@@ -1776,15 +1784,16 @@ class LASSection():
                     # Test if there are any errors in the parsed section
                     # by check if the only value in the errors column is
                     # None
-                    if self.df['errors'].unique().tolist() == [None]:
-                        # If there are no errors remove the errors column
-                        self.df = self.df.drop(columns=['errors'])
-                    else:
-                        for error in self.df['errors']:
-                            if error is not None:
-                                self.parse_errors.append(
-                                    error
-                                )
+                    if 'errors' in self.df.columns:
+                        if self.df['errors'].unique().tolist() == [None]:
+                            # If there are no errors remove the errors column
+                            self.df = self.df.drop(columns=['errors'])
+                        else:
+                            for error in self.df['errors']:
+                                if error is not None:
+                                    self.parse_errors.append(
+                                        error
+                                    )
                 except Exception as e:
                     # if it is a required section, return a critical error
                     # otherwise return a minor error
@@ -1865,14 +1874,13 @@ class LASSection():
                         )
                     self.df = self.parsed_section
                     # Test if there are any errors in the parsed section
-                    # by check if the only value in the errors column is
-                    # None
-                    if self.df['errors'].unique().tolist() == [None]:
-                        # If there are no errors remove the errors column
-                        self.df = self.df.drop(columns=['errors'])
-                        self.type = 'header'
-                    else:
-                        raise Exception('Not a header section')
+                    if 'errors' in self.df.columns:
+                        if self.df['errors'].unique().tolist() == [None]:
+                            # If there are no errors remove the errors column
+                            self.df = self.df.drop(columns=['errors'])
+                            self.type = 'header'
+                        else:
+                            raise Exception('Not a header section')
                 except Exception:
                     try:
                         self.parsed_section = parse_data_section(
