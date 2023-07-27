@@ -2443,6 +2443,8 @@ class LASFile():
                 # definition section does not match the number of
                 # columns in the data section, set a validation error
                 else:
+                    if not hasattr(getattr(self, 'curves'), 'validate_errors'):
+                        setattr(getattr(self, 'curves'), 'validate_errors', [])
                     getattr(self, 'curves').validate_errors.append(
                         LASFileCriticalError(
                             "Curves and data sections are not "
