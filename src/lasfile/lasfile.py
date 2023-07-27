@@ -1059,7 +1059,6 @@ def validate_v2_well(df):
     Exception:
         If any of the required mnemonics are missing.
     """
-    print('validating')
     validate_errors = []
     # Set of required mnemonics for version 2.0 well sections
     req_mnemonics = [
@@ -1109,23 +1108,21 @@ def validate_v2_well(df):
         )
     # Test if there is an errors column in the dataframe
     if "errors" in df.columns:
-        print('has errors')
         # If the value in the mnemonic column is in the req_mnemonics
         # list, and the value in the errors column is not None, append
         # a the error to the validate_errors list
         for index, row in df.iterrows():
             if row["mnemonic"] in req_mnemonics and row["errors"] is not None:
-                print(row)
                 validate_errors.append(
                     LASFileCriticalError(
                         f"Error parsing required header line "
-                        f"'{row['line']}', {row['errors']}"
+                        f"'{index}', {row['errors']}"
                     )
                 )
             elif row["errors"] is not None:
                 validate_errors.append(
                     LASFileMinorError(
-                        f"Error parsing header line '{row['line']}', "
+                        f"Error parsing header line '{index}', "
                         f"{row['errors']}"
                     )
                 )
@@ -1273,13 +1270,13 @@ def validate_v3_well(df):
                 validate_errors.append(
                     LASFileCriticalError(
                         f"Error parsing required header line "
-                        f"'{row['line']}', {row['errors']}"
+                        f"'{index}', {row['errors']}"
                     )
                 )
             elif row["errors"] is not None:
                 validate_errors.append(
                     LASFileMinorError(
-                        f"Error parsing header line '{row['line']}', "
+                        f"Error parsing header line '{index}', "
                         f"{row['errors']}"
                     )
                 )
@@ -1316,7 +1313,6 @@ def validate_well(df, version_num):
     Exception:
         If validation fails in the respective validate function.
     """
-    print('validating')
     validate_errors = []
     if version_num == "1.2" or version_num == "2.0":
         try:
@@ -1689,21 +1685,48 @@ class LASSection():
                 del self.parse_tbs
         # validate section
         if (
-            parse_on_init and validate_on_init and
-            not hasattr(self, 'parse_errors')
+            parse_on_init and validate_on_init
         ):
             self.validate_errors = []
             self.validate_tbs = []
-            try:
-                self.validate()
-                if self.validate_errors != []:
+            # If there are no parse errors, proceed normally with validation
+            if not hasattr(self, 'parse_errors') or self.parse_errors == []:
+                try:
+                    self.validate()
+                    if self.validate_errors != []:
+                        self.validated = False
+                    else:
+                        self.validated = True
+                except Exception as e:
                     self.validated = False
+                    self.validate_errors.append(e)
+                    self.validate_tbs.append(traceback.format_exc())
+            # If there are parse errors...
+            else:
+                # If there are critical parse errors, return a critical
+                # validation error
+                if any(
+                    isinstance(error, LASFileCriticalError)
+                    for error in getattr(self, 'parse_errors')
+                ):
+                    self.validate_errors.append(
+                        LASFileCriticalError(
+                            "Couldn't validate section due to critical parse "
+                            "errors."
+                        )
+                    )
+                # If there are no critical parse errors...
                 else:
-                    self.validated = True
-            except Exception as e:
-                self.validate_errors.append(e)
-                self.validate_tbs.append(traceback.format_exc())
-                return
+                    # attempt validation
+                    try:
+                        self.validate()
+                        if self.validate_errors != []:
+                            self.validated = False
+                        else:
+                            self.validated = True
+                    except Exception as e:
+                        self.validate_errors.append(e)
+                        self.validate_tbs.append(traceback.format_exc())
             if self.validate_errors == []:
                 del self.validate_errors
             if self.validate_tbs == []:
@@ -1799,7 +1822,11 @@ class LASSection():
                     # by check if the only value in the errors column is
                     # None
                     if 'errors' in self.df.columns:
-                        if self.df['errors'].unique().tolist() == [None]:
+                        if (
+                            getattr(
+                                self, 'df'
+                            )['errors'].unique().tolist() == [None]
+                        ):
                             # If there are no errors remove the errors column
                             self.df = self.df.drop(columns=['errors'])
                         else:
@@ -1918,31 +1945,32 @@ class LASSection():
         -------
         None
         """
-        if self.name == 'version' and type == 'header':
+
+        if self.name == 'version' and self.type == 'header':
             errors = validate_version(self.parsed_section, self.version_num)
             if errors != []:
                 for error in errors:
                     self.validate_errors.append(error)
-        elif self.name == 'well' and type == 'header':
+        elif self.name == 'well' and self.type == 'header':
             errors = validate_well(self.parsed_section, self.version_num)
             if errors != []:
                 for error in errors:
                     self.validate_errors.append(error)
-        elif self.name == 'curves' and type == 'header':
+        elif self.name == 'curves' and self.type == 'header':
             errors = validate_curves(self.parsed_section, self.version_num)
             if errors != []:
                 for error in errors:
                     self.validate_errors.append(error)
-        elif self.name == 'data' and type == 'data':
+        elif self.name == 'data' and self.type == 'data':
             if hasattr(self.parsed_section, 'read_errors'):
                 for error in self.parsed_section.read_errors:
                     self.validate_errors.append(error)
-        elif '_definition' in self.name and type == 'header':
+        elif '_definition' in self.name and self.type == 'header':
             errors = validate_curves(self.parsed_section, self.version_num)
             if errors != []:
                 for error in errors:
                     self.validate_errors.append(error)
-        elif '_data' in self.name and type == 'data':
+        elif '_data' in self.name and self.type == 'data':
             if hasattr(self.parsed_section, 'read_errors'):
                 for error in self.parsed_section.read_errors:
                     self.validate_errors.append(error)
@@ -1970,13 +1998,13 @@ class LASSection():
                 f"        Parsing Error: {self.parse_errors}\n"
                 f"        Traceback:\n{self.parse_tbs}\n"
             )
-        if not hasattr(self, 'validate_error'):
+        if not hasattr(self, 'validate_errors'):
             s += f"    Validated: {self.validated}\n"
         else:
             s += (
                 f"    Validated: {self.validated}\n"
                 "    Errors:\n"
-                f"        Validation Error: {self.validate_error}\n"
+                f"        Validation Error: {self.validate_errors}\n"
                 f"        Traceback:\n{self.validate_tb}\n"
             )
         if hasattr(self, 'df'):
@@ -1984,12 +2012,12 @@ class LASSection():
 
         return s
 
-    def add_validate_error(self, error, tb=None):
-        if not hasattr(self, 'validate_error'):
-            self.validate_error = []
+    def add_validate_errors(self, error, tb=None):
+        if not hasattr(self, 'validate_errors'):
+            self.validate_errors = []
         if not hasattr(self, 'validate_tb'):
             self.validate_tb = []
-        self.validate_error.append(error)
+        self.validate_errors.append(error)
         if tb is not None:
             self.validate_tb.append(tb)
 
@@ -2097,7 +2125,7 @@ class LASFile():
     parse_error : dict
         Errors encountered during parsing of the sections, if any.
 
-    validate_error : dict
+    validate_errors : dict
         Errors encountered during validation of the sections, if any.
 
     errors : dict
@@ -2126,10 +2154,6 @@ class LASFile():
     ensure_curve_and_data_congruency(self)
         Checks if the definition/curve and data columns of the LAS file are
         congruent.
-
-    aggregate_errors(self)
-        Aggregates all the errors that occurred during the processing of the
-        LAS file into one dictionary.
 
     __str__(self)
         Returns a user-friendly string representation of the LASFile object,
@@ -2413,15 +2437,15 @@ class LASFile():
 
                 # Aggregate validate_errors
                 # If the current section has validate errors
-                if hasattr(section, 'validate_error'):
-                    # Instantiate the validate_error attribute if it
+                if hasattr(section, 'validate_errors'):
+                    # Instantiate the validate_errors attribute if it
                     # doesn't exist
-                    if not hasattr(self, 'validate_error'):
-                        setattr(self, 'validate_error', {})
+                    if not hasattr(self, 'validate_errors'):
+                        setattr(self, 'validate_errors', {})
                     # Add the current validate error for the current
-                    # section to the LASFile validate_error dictionary
-                    getattr(self, 'validate_error')[section.name] = (
-                            section.validate_error
+                    # section to the LASFile validate_errors dictionary
+                    getattr(self, 'validate_errors')[section.name] = (
+                            section.validate_errors
                         )
 
     def set_error_attributes(self):
@@ -2453,8 +2477,8 @@ class LASFile():
             s += f"Section Splitting Error: {self.split_error}\n"
         if hasattr(self, 'parse_errors'):
             s += f"Parsing Error: {self.parse_errors}\n"
-        if hasattr(self, 'validate_error'):
-            s += f"Validation Error: {getattr(self, 'validate_error')}"
+        if hasattr(self, 'validate_errors'):
+            s += f"Validation Error: {getattr(self, 'validate_errors')}"
         if hasattr(self, 'sections'):
             for section in self.sections:
                 s += str(f"  {section}")
@@ -2594,19 +2618,19 @@ def error_check(las, critical_only=True):
             elif type(las.parse_errors) == Exception:
                 if isinstance(las.parse_errors, LASFileCriticalError):
                     return False
-        # Check if the las object has a validate_error
+        # Check if the las object has a validate_errors
         if hasattr(las, 'validate_errors'):
-            if type(las.validate_error) == dict:
-                for sec_name, error_list in las.validate_error.items():
+            if type(las.validate_errors) == dict:
+                for sec_name, error_list in las.validate_errors.items():
                     for error in error_list:
                         if isinstance(error, LASFileCriticalError):
                             return False
-            if type(las.validate_error) == list:
-                for error in las.validate_error:
+            if type(las.validate_errors) == list:
+                for error in las.validate_errors:
                     if isinstance(error, LASFileCriticalError):
                         return False
-            if type(las.validate_error) == Exception:
-                if isinstance(las.validate_error, LASFileCriticalError):
+            if type(las.validate_errors) == Exception:
+                if isinstance(las.validate_errors, LASFileCriticalError):
                     return False
         # If no critical errors are found, return True
         return True
@@ -2622,6 +2646,6 @@ def error_check(las, critical_only=True):
             return False
         if hasattr(las, 'parse_errors'):
             return False
-        if hasattr(las, 'validate_error'):
+        if hasattr(las, 'validate_errors'):
             return False
         return True
