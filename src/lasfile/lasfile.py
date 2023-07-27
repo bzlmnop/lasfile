@@ -2401,7 +2401,6 @@ class LASFile():
                             )
                             # Reset the index of the repeated mnemonics df
                             repeated_mnemonics_df.reset_index(inplace=True)
-
                             # for each row in the repeated mnemonics df,
                             # append an underscore and the index digit
                             # to the end of the mnemonic, except the
@@ -2419,7 +2418,7 @@ class LASFile():
                                     )
 
                             # Create a copy of the curves df
-                            new_curves_df = curves_df.copy()
+                            new_curves_df = curves_df
                             # replace the old mnemonics with the new
                             # ones by index
                             for index, new_mnemonic in \
@@ -2432,23 +2431,14 @@ class LASFile():
                                 getattr(self, 'curves'),
                                 'df',
                                 new_curves_df)
-                            # Rename the columns of the data section
-                            getattr(self, "data").df.rename(
-                                columns=dict(zip(
-                                    getattr(self, "data").df.columns,
-                                    new_curves_df.mnemonic.values
-                                )),
-                                inplace=True
-                            )
-                    else:
-                        # Rename the columns of the data section
-                        getattr(self, "data").df.rename(
-                            columns=dict(zip(
-                                getattr(self, "data").df.columns,
-                                getattr(self, "curves").df.mnemonic.values
-                            )),
-                            inplace=True
-                        )
+                    # Rename the columns of the data section
+                    getattr(self, "data").df.rename(
+                        columns=dict(zip(
+                            getattr(self, "data").df.columns,
+                            getattr(self, "curves").df.mnemonic.values
+                        )),
+                        inplace=True
+                    )
                 # If the number of rows/curve definitions in the
                 # definition section does not match the number of
                 # columns in the data section, set a validation error
