@@ -2390,30 +2390,58 @@ class LASFile():
                         repeated_mnemonics = curves_df.mnemonic[
                             curves_df.mnemonic.duplicated(keep=False)
                         ].unique()
-                        # for each unique repeated mnemonic make a df of
+                        # For each unique repeated mnemonic make a df of
                         # the repeated mnemonics
                         for mnemonic in repeated_mnemonics:
+                            # Get a df of the repeated mnemonics
                             repeated_mnemonics_df = (
                                 curves_df.loc[
                                     curves_df['mnemonic'] == mnemonic
                                 ]
                             )
+                            # Reset the index of the repeated mnemonics df
+                            repeated_mnemonics_df.reset_index(inplace=True)
+
                             # for each row in the repeated mnemonics df,
                             # append an underscore and the index digit
-                            # to the end of the mnemonic
-                            new_data_col_names = repeated_mnemonics_df.columns
+                            # to the end of the mnemonic, except the
+                            # first instance of the repeated mnemonic
+                            # format: {old_index: [new_mnemonic]}
+                            new_repeated_mnemonics = {}
                             for index, row in repeated_mnemonics_df.iterrows():
-                                curves_df.loc[index, 'mnemonic'] = (
-                                    f"{row['mnemonic']}_{index}"
+                                if index == 0:
+                                    new_repeated_mnemonics[row['index']] = (
+                                        row['mnemonic']
+                                    )
+                                else:
+                                    new_repeated_mnemonics[row['index']] = (
+                                        f"{row['mnemonic']}_{index}"
+                                    )
+
+                            # Create a copy of the curves df
+                            new_curves_df = curves_df.copy()
+                            # replace the old mnemonics with the new
+                            # ones by index
+                            for index, new_mnemonic in \
+                                    new_repeated_mnemonics.items():
+                                new_curves_df.loc[index, 'mnemonic'] = (
+                                    new_mnemonic
                                 )
+                            # Replace the curves df with the new one
+                            setattr(
+                                getattr(self, 'curves'),
+                                'df',
+                                new_curves_df)
+                            # Rename the columns of the data section
                             getattr(self, "data").df.rename(
                                 columns=dict(zip(
                                     getattr(self, "data").df.columns,
-                                    new_data_col_names
+                                    new_curves_df.mnemonic.values
                                 )),
                                 inplace=True
                             )
                     else:
+                        # Rename the columns of the data section
                         getattr(self, "data").df.rename(
                             columns=dict(zip(
                                 getattr(self, "data").df.columns,
