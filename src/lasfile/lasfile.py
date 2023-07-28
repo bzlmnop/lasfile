@@ -1227,39 +1227,47 @@ def validate_v3_well(df):
     if "CTRY" in df.mnemonic.values:
         country_code = df.loc[
             df["mnemonic"] == "CTRY", 'value'
-        ].values[0].upper()
-        if country_code in valid_country_codes:
-            if country_code == "CA":
-                if all(
-                    mnemonic not in df.mnemonic.values
-                    for mnemonic in ["PROV", "UWI", "LIC"]
+        ].values[0]
+        if country_code is not None:
+            country_code = country_code.upper()
+            if country_code in valid_country_codes:
+                if country_code == "CA":
+                    if all(
+                        mnemonic not in df.mnemonic.values
+                        for mnemonic in ["PROV", "UWI", "LIC"]
+                    ):
+                        # Make a list of which mnemonics are missing
+                        for mnemonic in ["PROV", "UWI", "LIC"]:
+                            if mnemonic not in df.mnemonic.values:
+                                missing_mnemonics.append(mnemonic)
+                elif country_code == "US":
+                    if all(
+                        mnemonic not in df.mnemonic.values
+                        for mnemonic in ["STAT", "CNTY", "API"]
+                    ):
+                        # Make a list of which mnemonics are missing
+                        for mnemonic in ["STAT", "CNTY", "API"]:
+                            if mnemonic not in df.mnemonic.values:
+                                missing_mnemonics.append(mnemonic)
+                elif (
+                        country_code is None or
+                        country_code == ''
                 ):
-                    # Make a list of which mnemonics are missing
-                    for mnemonic in ["PROV", "UWI", "LIC"]:
-                        if mnemonic not in df.mnemonic.values:
-                            missing_mnemonics.append(mnemonic)
-            elif country_code == "US":
-                if all(
-                    mnemonic not in df.mnemonic.values
-                    for mnemonic in ["STAT", "CNTY", "API"]
-                ):
-                    # Make a list of which mnemonics are missing
-                    for mnemonic in ["STAT", "CNTY", "API"]:
-                        if mnemonic not in df.mnemonic.values:
-                            missing_mnemonics.append(mnemonic)
-            elif (
-                    country_code is None or
-                    country_code == ''
-            ):
-                pass
-            else:
-                validate_errors.append(
-                    LASFileMinorError(
-                        "Value for country code mnemonic is invalid: "
-                        f"{country_code}. Must be a valid internet "
-                        "country code."
+                    pass
+                else:
+                    validate_errors.append(
+                        LASFileMinorError(
+                            "Value for country code mnemonic is invalid: "
+                            f"{country_code}. Must be a valid internet "
+                            "country code."
+                        )
                     )
+        else:
+            validate_errors.append(
+                LASFileMinorError(
+                    "Value for country code is missing."
                 )
+            )
     if missing_mnemonics != []:
         validate_errors.append(
             MissingMnemonicError(
