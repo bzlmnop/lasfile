@@ -884,7 +884,13 @@ def parse_header_section(section_string, version_num='2.0', delimiter=None):
         return DataFrame(results)
 
 
-def parse_data_section(raw_data, version_num, wrap, delimiter=None):
+def parse_data_section(
+        raw_data,
+        version_num,
+        wrap,
+        delimiter=None,
+        curve_names=None
+):
     """
     Parses the data section of the input raw data based on the provided
     version number.
@@ -917,7 +923,8 @@ def parse_data_section(raw_data, version_num, wrap, delimiter=None):
         filtered_data,
         version_num,
         wrap=wrap,
-        delimiter=delimiter)
+        delimiter=delimiter,
+        curve_names=curve_names)
     return loaded_data
 
 
@@ -1397,6 +1404,43 @@ def validate_curves(df, version_num):
     return validate_errors
 
 
+def unwrap_las_data(num_values, las_data):
+    """
+    Takes wrapped data, where a single depth value/row is split across
+    multiple lines, and unwraps it into a single line per depth value.
+
+    Parameters:
+    ----------
+    num_values : int
+        The number of curves/values that should be present in each row
+        of the unwrapped data.
+
+    las_data : str
+        The raw wrapped LAS data to be unwrapped.
+
+    Returns:
+    -------
+    unwrapped_data : str
+        The unwrapped LAS data.
+    """
+    # split the data into individual lines
+    lines = las_data.split('\n')
+    unwrapped_data = []
+    current_row = []
+    for line in lines:
+        numbers = re.findall(r'\S+', line)
+        # append columns to the current row
+        current_row.extend(numbers)
+        # if row has the expected number of values
+        if len(current_row) == num_values:
+            # append the row
+            unwrapped_data.append(' '.join(current_row) + '\n')
+            # start a new row
+            current_row = []
+    # join all unwrapped rows into a single string
+    return ''.join(unwrapped_data)
+
+
 class LASData():
     """
     Class for storing and handling Log ASCII
@@ -1461,7 +1505,8 @@ class LASData():
         delimiter=None,
         invalid_raise=False,
         unrecognized_delimiters=True,
-        default_delimiter=' '
+        default_delimiter=' ',
+        curve_names=None
     ):
         # Initialize attributes
         self.raw_data = raw_data
@@ -1496,56 +1541,47 @@ class LASData():
             # If unrecognized delimiters are not allowed, and the
             # input delimiter is not in the dictionary, raise an error
             self.delimiter_error = (
-                f"Unrecognized delimiter: '{self.delimiter}', unable to load!"
+                LASFileCriticalError(
+                    f"Unrecognized delimiter: '{self.delimiter}', "
+                    "unable to load!"
+                )
             )
             return
         if wrap:
-            # If the data is wrapped...
-            # Remove leading and trailing whitespace from depth lines;
-            # lines with only one value.
-            pattern = r'^\s*(\d+\.\d+)\s*$'
-            processed_data = re.sub(pattern, r'\1', self.raw_data, flags=re.M)
-
-            # Remove trailing whitespace from all lines
-            processed_data = re.sub(r'\s*$', '', processed_data, flags=re.M)
-
-            # Replace the newline characters before each depth value
-            # with a unique separator
-            processed_data = re.sub(r'\n(?=\d)', ' | ', processed_data)
-
-            # Replace all newline characters with space
-            processed_data = processed_data.replace('\n', ' ')
-
-            # Split the data into records using the unique separator
-            records = processed_data.split(' | ')
-
-            # Convert the list of records into a single string with each
-            # record on a separate line
-            records_str = '\n'.join(records)
-
-            # Create a file-like object from the string
-            with StringIO(records_str) as f:
-                # Catch any warnings that occur when reading the data
-                with warnings.catch_warnings(record=True) as w:
-                    warnings.simplefilter("always")
-                    # Use numpy's genfromtxt to read the data into a
-                    # numpy array
-                    self.data = genfromtxt(
-                        f,
-                        delimiter=delim,
-                        invalid_raise=invalid_raise
+            if curve_names is not None:
+                num_values = len(curve_names)
+                self.unwrapped_data = unwrap_las_data(
+                    num_values,
+                    self.raw_data
+                )
+                with StringIO(self.unwrapped_data) as f:
+                    # Catch any warnings that occur when reading the data
+                    with warnings.catch_warnings(record=True) as w:
+                        warnings.simplefilter("always")
+                        # Use numpy's genfromtxt to read the data into a
+                        # numpy array
+                        self.data = genfromtxt(
+                            f,
+                            delimiter=delim,
+                            invalid_raise=invalid_raise
+                        )
+                        # Convert the numpy array to a pandas DataFrame
+                        self.df = DataFrame(self.data)
+                        for warn in w:
+                            if issubclass(warn.category, UserWarning):
+                                # Store any read errors
+                                self.read_errors = [
+                                    err
+                                    for err
+                                    in str(warn.message).split("\n")
+                                ]
+                                return
+            else:
+                self.read_errors = [
+                    LASFileCriticalError(
+                        "Curve names must be provided when wrap is True"
                     )
-                    # Convert the numpy array to a pandas DataFrame
-                    self.df = DataFrame(self.data)
-                    for warn in w:
-                        if issubclass(warn.category, UserWarning):
-                            # Store any read errors
-                            self.read_errors = [
-                                err
-                                for err
-                                in str(warn.message).split("\n")
-                            ]
-                            return
+                ]
         # If the data is not wrapped...
         else:
             # Create a file-like object from the string
@@ -1684,6 +1720,7 @@ class LASSection():
         wrap,
         delimiter=None,
         assoc=None,
+        curve_names=None,
         parse_on_init=True,
         validate_on_init=True
     ):
@@ -1696,6 +1733,7 @@ class LASSection():
         self.delimiter = delimiter
         self.validated = False
         self.wrap = wrap
+        self.curve_names = curve_names
         # parse section
         if parse_on_init:
             self.parse_errors = []
@@ -1847,7 +1885,8 @@ class LASSection():
                         self.raw_data,
                         version_num=self.version_num,
                         wrap=self.wrap,
-                        delimiter=self.delimiter
+                        delimiter=self.delimiter,
+                        curve_names=self.curve_names
                     )
                     self.df = self.parsed_section.df
                     # Test if there are any errors in the parsed section
@@ -2194,6 +2233,7 @@ class LASFile():
         if file_path is not None:
             self.file_path = file_path
             self.sections = []
+            self.curve_names = None
             # Try to open and read the file into a string
             data = self.read_file(self.file_path)
 
@@ -2344,6 +2384,19 @@ class LASFile():
                     section_type = 'data'
                 else:
                     section_type = ''
+                # check if the sections attribute exists
+                if hasattr(self, 'sections'):
+                    # If it exists, check that the curves section is in
+                    # the list of sections stored in the sections attribute
+                    for section in self.sections:
+                        if section.name == 'curves':
+                            curves_section = section
+                            if error_check(curves_section):
+                                if hasattr(curves_section, 'df'):
+                                    self.curve_names = (
+                                        curves_section.
+                                        df['mnemonic'].tolist()
+                                    )
                 # Try to create the section
                 try:
                     section = LASSection(
@@ -2352,7 +2405,8 @@ class LASFile():
                         section_type,
                         self.version_num,
                         self.wrap,
-                        delimiter=self.delimiter
+                        delimiter=self.delimiter,
+                        curve_names=self.curve_names
                     )
                     self.sections.append(section)
                 except Exception as e:
@@ -2367,7 +2421,8 @@ class LASFile():
                             self.wrap,
                             delimiter=self.delimiter,
                             parse_on_init=False,
-                            validate_on_init=False
+                            validate_on_init=False,
+                            curve_names=self.curve_names
                         )
                         section.parse_errors = [e]
                         self.sections.append(section)
