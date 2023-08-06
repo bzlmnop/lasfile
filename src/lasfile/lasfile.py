@@ -2629,6 +2629,10 @@ def read(fp):
     return LASFile(file_path=fp)
 
 
+def write(lf, overwrite=False, out_path=None, to_disk=False, in_memory=False):
+    NotImplemented
+
+
 def api_from_las(input):
     # If the input is a string, assume it's a file path and try to read
     # it into a LASFile object
