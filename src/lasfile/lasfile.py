@@ -2225,6 +2225,9 @@ class LASFile():
         Checks if the definition/curve and data columns of the LAS file are
         congruent.
 
+    get_api(self)
+        Attempts to extract the API number from the LAS file.
+
     __str__(self)
         Returns a user-friendly string representation of the LASFile object,
         including any errors that occurred.
@@ -2611,6 +2614,54 @@ class LASFile():
             for section in self.sections:
                 s += str(f"  {section}")
         return s
+
+    def get_api(self):
+        # If the las file has a well section, try to get the api from it
+        if hasattr(self, 'well'):
+            try:
+                # Check if 'UWI', 'uwi', 'API', or 'api' is present in the
+                # 'mnemonic' column
+                mask = getattr(self, "well").df['mnemonic'].str.lower().isin(
+                    ['uwi', 'api']
+                )
+                # Filter the DataFrame using the mask
+                filtered_df = getattr(self, "well").df[mask]
+                # Get the corresponding values for the matched mnemonics
+                matched_values = filtered_df['value'].tolist()
+
+                # Attempt to load all matched values into an APINumber
+                # objects
+                valid_values = []
+                for value in matched_values:
+                    try:
+                        APINumber(value)
+                        valid_values.append(value)
+                    except Exception:
+                        pass
+
+                # Remove Null values from valid_values
+                valid_values = [x for x in valid_values if x is not None]
+
+                # If there are matched values, check if they have the same
+                # first 10 characters
+                if len(valid_values) > 0:
+                    if all(
+                        APINumber(x).unformatted_10_digit == APINumber(
+                            valid_values[0]
+                            ).unformatted_10_digit
+                        for x in valid_values
+                    ):
+                        return APINumber(valid_values[0])
+                    else:
+                        # If they don't have the same first 10 characters,
+                        # return the longest valid_value as an APINumber
+                        return APINumber(max(valid_values, key=len))
+                else:
+                    return None
+            except Exception as e:
+                raise e
+        else:
+            return None
 
 
 def read(fp):
