@@ -43,6 +43,24 @@ las['well']['raw_data']
 las['well']['df']
 ```
 
+### Write LAS file
+The `write` function allows you to write LAS files based on the sections available in the `LASFile` object.
+
+#### Usage:
+```python
+las.write('path/to/output/file.las')
+```
+
+#### Limitations:
+- Currently, the write functionality **cannot** write LAS v. 3.0 files. This feature is under development.
+
+### Read and Write Capabilities
+| Version | Read       | Write         |
+|---------|------------|---------------|
+| 1.2     | ✔ Working  | ✔ Working     |
+| 2.0     | ✔ Working  | ✔ Working     |
+| 3.0     | ✔ Working  | 🚧 In Development |
+
 ### Errors
 #### View all errors
 ```python

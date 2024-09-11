@@ -1828,7 +1828,7 @@ class LASSection():
                     all_lowercase=True,
                     assocs=True
                 )
-                if type(result) != str and result is not None:
+                if type(result) is not str and result is not None:
                     self.association = result[1]
                 else:
                     self.association = None
@@ -2365,6 +2365,18 @@ class LASFile():
             return
 
     def parse_and_validate_sections(self, sections_dict):
+        """
+        Parse and validate the sections of a LAS file.
+
+        Parameters
+        ----------
+        sections_dict : dict
+            A dictionary containing the sections of the LAS file.
+
+        Returns
+        -------
+        None
+        """
         # If it split correctly and therefore the sections_dict is not
         # None, then generate las section items from the strings
         if sections_dict is not None:
@@ -2443,6 +2455,10 @@ class LASFile():
         # Run the function to ensure the curve and data sections
         # have the same number of curve mnemonics/data columns
         self.ensure_curve_and_data_congruency()
+
+        # If the version is 3.0, add mnemonics to data sections
+        if self.version_num == '3.0':
+            self.add_mnemonics_to_data_sections()
 
         # Aggregate parse_errors and validate_errors from all sections
         self.aggregate_section_errors()
@@ -2549,6 +2565,28 @@ class LASFile():
                             "congruent."
                         )
                     )
+
+    def add_mnemonics_to_data_sections(self):
+        """
+        Adds mnemonics from associated definition sections to data sections
+        for LAS version 3.0 files.
+        """
+        # Loop through sections
+        for section in self.sections:
+            # If the section is a data section
+            if section.type == 'data':
+                # and has an association
+                if hasattr(section, 'association'):
+                    # and association is not None
+                    if section.association is not None:
+                        # Get the mnemonics from the associated definition
+                        # section
+                        mnemonics = getattr(
+                            getattr(self, section.association),
+                            'df'
+                        )['mnemonic'].tolist()
+                        # Add the mnemonics to the data section
+                        section.df.columns = mnemonics
 
     def aggregate_section_errors(self):
         if hasattr(self, 'sections'):
@@ -2680,8 +2718,219 @@ def read(fp):
     return LASFile(file_path=fp)
 
 
-def write(lf, overwrite=False, out_path=None, to_disk=False, in_memory=False):
-    NotImplemented
+def arrange(section, min_spaces=2, header=True):
+    """
+    Arrange the lines in a section to be neatly formatted, based on the
+    section type ('header' or 'data').
+
+    Parameters
+    ----------
+    section (LASSection):
+        The LASSection object with attributes `type` and `df`
+        (DataFrame).
+    min_spaces (int):
+        Minimum spaces between columns. Default is 2. Minimum value
+        allowed is 1.
+    header (bool):
+        Whether to include the header and separator lines. Default is
+        True.
+
+    Returns
+    -------
+    str:
+        Formatted text block ready for writing to a file.
+    """
+    # Ensure min_spaces is at least 1
+    min_spaces = max(min_spaces, 1)
+
+    # Extract the DataFrame from the section
+    df = section.df
+
+    # Handle formatting based on section type
+    if section.type == 'header':
+        # Calculate the maximum widths for each column, considering
+        # minimum header lengths
+        # Minimum width to fit "MNEM"
+        max_mnem_width = max(df['mnemonic'].str.len().max(), 4)
+        # Minimum width to fit "UNIT"
+        max_unit_width = max(df['units'].fillna('').str.len().max(), 4)
+        # Minimum width to fit "VALUE"
+        max_value_width = max(
+            df['value'].apply(lambda x: len(str(x))).max(), 5
+        )
+        # Minimum width to fit "DESCRIPTION"
+        max_desc_width = max(
+            df['description'].fillna('').str.len().max(), 11
+        )
+
+        # Define header and separator lines based on calculated widths
+        header_line = (
+            f"# MNEM.UNIT{' ' * (max_unit_width - 4 + min_spaces)} "
+            f"VALUE{' ' * (max_value_width - 5 + min_spaces)}"
+            f"DESCRIPTION"
+        )
+        separator = (
+            f"# {'-' * max_mnem_width}.{'-' * max_unit_width}"
+            f"{' ' * min_spaces} {'-' * max_value_width}"
+            f"{' ' * min_spaces}{'-' * max_desc_width}"
+        )
+
+        # Initialize formatted lines list
+        formatted_lines = []
+
+        # Add headers if header is True
+        if header:
+            formatted_lines.extend([header_line, separator])
+
+        # Format each line according to the calculated widths
+        for _, row in df.iterrows():
+            mnemonic = row['mnemonic']
+            unit = row['units'] if row['units'] else ''
+            value = str(row['value']) if row['value'] else ''
+            description = row['description'] if row['description'] else ''
+
+            line = (
+                f"  {mnemonic:<{max_mnem_width}}"
+                f".{unit:<{max_unit_width}}{' ' * min_spaces} "
+                f"{value:<{max_value_width}}{' ' * min_spaces}"
+                f": {description}"
+            )
+            formatted_lines.append(line)
+
+    elif section.type == 'data':
+        # Calculate maximum widths dynamically based on the DataFrame's
+        # headers
+        max_col_widths = {
+            col: max(df[col].astype(str).apply(len).max(), len(col))
+            for col in df.columns
+        }
+
+        # Define dynamic header and separator lines based on DataFrame
+        # headers
+        header_line = "# " + "  ".join(
+            [f"{col:<{max_col_widths[col]}}" for col in df.columns]
+        )
+        separator = "# " + "  ".join(
+            ['-' * max_col_widths[col] for col in df.columns]
+        )
+
+        # Initialize formatted lines list
+        formatted_lines = []
+
+        # Add headers if header is True
+        if header:
+            formatted_lines.extend([header_line, separator])
+
+        # Format each row of data based on column widths
+        for _, row in df.iterrows():
+            line = "  " + "  ".join(
+                [
+                    f"{str(row[col]):<{max_col_widths[col]}}"
+                    for col in df.columns
+                ]
+            )
+            formatted_lines.append(line)
+
+    # Combine all lines into a single text block and add a newline at the end
+    return "\n".join(formatted_lines) + "\n"
+
+
+def write(lf, overwrite=False, file_path=None, version=None):
+    """
+    Write a LASFile object to a LAS file
+
+    Parameters
+    ----------
+    lf : LASFile object
+        The LASFile object to write to a file
+
+    overwrite : bool
+        If True, overwrite the file if it already exists
+
+    file_path : str
+        The path to write the file to, if this is None, it will write to
+        the path stored in the LASFile object, if overwrite is True, it
+        will overwrite the file at the path stored in the LASFile object
+    """
+    # Check if the file_path is None, if it is, set it to the file_path
+    # attribute of the LASFile object
+    if file_path is None:
+        file_path = lf.file_path
+    if file_path is None:
+        raise ValueError("file_path is None")
+    # Check if the file already exists and if overwrite is False, raise
+    # a FileExistsError
+    if os.path.exists(file_path) and not overwrite:
+        raise FileExistsError(
+            "The file already exists, set overwrite to True to overwrite"
+        )
+    # Check if a version is provided, if it is not, use the version
+    # attribute of the LASFile object
+    if version is None:
+        version = lf.version.version_num
+    # Check for errors in the LASFile object then write the file if
+    # there are no errors
+    if error_check(lf):
+        with open(file_path, 'w') as f:
+            # Write the version section
+            f.write("~Version\n")
+            f.write(
+                f"  VERS.    {version}:    "
+                f"CWLS LOG ASCII STANDARD -VERSION {version}\n"
+            )
+            f.write(
+                "  WRAP.     NO:    ONE LINE PER DEPTH STEP\n"
+            )
+            if version == '3.0':
+                f.write(
+                    "  DLM . COMMA : DELIMITING CHARACTER (SPACE TAB OR COMMA)"
+                )
+            # Write the well section
+            f.write("~Well\n")
+            # Arrange the well section
+            well_section = arrange(lf.well)
+            f.write(well_section)
+
+            # Write the curves section
+            f.write("~Curves\n")
+            # Arrange the curves section
+            curves_section = arrange(lf.curves)
+            f.write(curves_section)
+
+            # If the lasfile has a parameters section, write it
+            if hasattr(lf, 'parameters'):
+                # Write the parameters section
+                f.write("~Parameters\n")
+                # Arrange the parameters section
+                parameters_section = arrange(lf.parameters)
+                f.write(parameters_section)
+
+            # If the lasfile has an other section, write it
+            if hasattr(lf, 'other'):
+                # Write the other section
+                f.write(lf.other.raw_data)
+                f.write("\n")
+
+            # Write any other sections if it is version 3.0
+            if version == '3.0':
+                for section in lf.sections:
+                    if section.name not in [
+                        'version',
+                        'well',
+                        'parameters',
+                        'other',
+                        'curves',
+                        'data'
+                    ]:
+                        f.write(f"~{section.name}\n")
+                        section_section = arrange(section)
+                        f.write(section_section)
+
+            # Write the data section
+            f.write("~ASCII Data\n")
+            # Arrange the data section
+            data_section = arrange(lf.data)
+            f.write(data_section)
 
 
 def api_from_las(input):
@@ -2772,20 +3021,20 @@ def error_check(las, critical_only=True):
                 return False
         # Check if the las object has a read_error
         if hasattr(las, 'read_error'):
-            if type(las.read_error) == dict:
+            if type(las.read_error) is dict:
                 for sec_name, error in las.read_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
-            elif type(las.read_error) == Exception:
+            elif type(las.read_error) is Exception:
                 if isinstance(las.read_error, LASFileCriticalError):
                     return False
         # Check if the las object has a version_error
         if hasattr(las, 'version_error'):
-            if type(las.version_error) == dict:
+            if type(las.version_error) is dict:
                 for sec_name, error in las.version_error.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
-            elif type(las.version_error) == Exception:
+            elif type(las.version_error) is Exception:
                 if isinstance(las.version_error, LASFileCriticalError):
                     return False
         # Check if the las object has a split_error
@@ -2794,25 +3043,25 @@ def error_check(las, critical_only=True):
                 return False
         # Check if the las object has a parse_errors
         if hasattr(las, 'parse_errors'):
-            if type(las.parse_errors) == dict:
+            if type(las.parse_errors) is dict:
                 for sec_name, error in las.parse_errors.items():
                     if isinstance(error, LASFileCriticalError):
                         return False
-            elif type(las.parse_errors) == Exception:
+            elif type(las.parse_errors) is Exception:
                 if isinstance(las.parse_errors, LASFileCriticalError):
                     return False
         # Check if the las object has a validate_errors
         if hasattr(las, 'validate_errors'):
-            if type(las.validate_errors) == dict:
+            if type(las.validate_errors) is dict:
                 for sec_name, error_list in las.validate_errors.items():
                     for error in error_list:
                         if isinstance(error, LASFileCriticalError):
                             return False
-            if type(las.validate_errors) == list:
+            if type(las.validate_errors) is list:
                 for error in las.validate_errors:
                     if isinstance(error, LASFileCriticalError):
                         return False
-            if type(las.validate_errors) == Exception:
+            if type(las.validate_errors) is Exception:
                 if isinstance(las.validate_errors, LASFileCriticalError):
                     return False
         # If no critical errors are found, return True
