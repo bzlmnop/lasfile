@@ -48,11 +48,17 @@ The `write` function allows you to write LAS files based on the sections availab
 
 #### Usage:
 ```python
-las.write('path/to/output/file.las')
+from lasfile import write
+
+write(las, overwrite=False, file_path='path/to/output/file.las')
 ```
+
+#### Functionality:
+- If a 'file_path' is not passed to the function, the 'write' function will attempt to overwrite the existing file stored in the 'file_path' variable of the LASFile object. Overwrite functionality is disabled by default but can be enabled by setting the 'overwrite' attribute to 'True'.
 
 #### Limitations:
 - Currently, the write functionality **cannot** write LAS v. 3.0 files. This feature is under development.
+- LAS v. 3.0 files can be written to LAS v. 2.0 format by setting the 'version' keyword argument of the 'write' function to '2.0'. However, this will result in the loss of any data stored in sections not found in the LAS v. 2.0 format.
 
 ### Read and Write Capabilities
 | Version | Read       | Write         |
