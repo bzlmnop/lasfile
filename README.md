@@ -14,10 +14,10 @@ import lasfile
 las = lasfile.LASFile(file_path='path/to/file.las')
 ```
 #### In order for an lasfile to properly read, and pass a critical error check, it must have the following sections:
-##### Version
-##### Well
-##### Curves
-##### Data
+- Version
+- Well
+- Curves
+- Data
 
 ### View sections in LAS file
 ```python
