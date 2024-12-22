@@ -19,8 +19,10 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest, macos-latest]
         exclude:
-          # Exclude macOS with Python 3.7 due to version unavailability on arm64
+          # Exclude macOS and ubuntu with Python 3.7 due to version unavailability on arm64
           - os: macos-latest
+            python-version: "3.7"
+          - os: ubuntu-latest
             python-version: "3.7"
 
     steps:
