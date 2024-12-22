@@ -79,8 +79,8 @@ las.open_error
 las.read_error
 las.split_error
 las.version_error
-las.parse_error
-las.validate_error
+las.parse_errors
+las.validate_errors
 ```
 
 #### Check for errors
