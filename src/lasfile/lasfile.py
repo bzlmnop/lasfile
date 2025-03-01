@@ -2604,14 +2604,14 @@ class LASFile():
                                 # Create or append to section validation errors
                                 if not hasattr(section, 'validate_errors'):
                                     section.validate_errors = []
-                                # Add as a critical error since data integrity 
+                                # Add as a critical error since data integrity
                                 # can't be guaranteed
                                 section.validate_errors.append(
                                     LASFileCriticalError(error_msg)
                                 )
                                 # Don't try to fix or apply column names
                             else:
-                                # Add the mnemonics to the data section only if 
+                                # Add the mnemonics to the data section only if
                                 # they match
                                 section.df.columns = mnemonics
 
