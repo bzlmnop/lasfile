@@ -1729,7 +1729,7 @@ class LASSection():
         self.raw_data = raw_data
         self.type = section_type
         self.version_num = version_num
-        self.assocation = assoc
+        self.association = assoc
         self.delimiter = delimiter
         self.validated = False
         self.wrap = wrap
@@ -2579,10 +2579,14 @@ class LASFile():
                 if hasattr(section, 'association'):
                     # and association is not None
                     if section.association is not None:
+                        # Map 'curve' to 'curves' if needed
+                        association = section.association
+                        if association == 'curve':
+                            association = 'curves'
                         # Get the mnemonics from the associated definition
                         # section
                         mnemonics = getattr(
-                            getattr(self, section.association),
+                            getattr(self, association),
                             'df'
                         )['mnemonic'].tolist()
                         # Add the mnemonics to the data section
