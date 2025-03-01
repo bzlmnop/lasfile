@@ -2583,14 +2583,49 @@ class LASFile():
                         association = section.association
                         if association == 'curve':
                             association = 'curves'
-                        # Get the mnemonics from the associated definition
-                        # section
-                        mnemonics = getattr(
-                            getattr(self, association),
-                            'df'
-                        )['mnemonic'].tolist()
-                        # Add the mnemonics to the data section
-                        section.df.columns = mnemonics
+
+                        try:
+                            # Get the mnemonics from the associated definition
+                            # section
+                            mnemonics = getattr(
+                                getattr(self, association),
+                                'df'
+                            )['mnemonic'].tolist()
+
+                            # Check if number of mnemonics matches columns
+                            if len(mnemonics) != len(section.df.columns):
+                                data_cols = len(section.df.columns)
+                                mnem_cols = len(mnemonics)
+                                error_msg = (
+                                    f"Columns/mnemonics mismatch: Data has "
+                                    f"{data_cols} columns, but {association} "
+                                    f"section has {mnem_cols} mnemonics"
+                                )
+                                # Create or append to section validation errors
+                                if not hasattr(section, 'validate_errors'):
+                                    section.validate_errors = []
+                                # Add as a critical error since data integrity 
+                                # can't be guaranteed
+                                section.validate_errors.append(
+                                    LASFileCriticalError(error_msg)
+                                )
+                                # Don't try to fix or apply column names
+                            else:
+                                # Add the mnemonics to the data section only if 
+                                # they match
+                                section.df.columns = mnemonics
+
+                        except Exception as e:
+                            # Catch any other errors that might occur
+                            if not hasattr(section, 'validate_errors'):
+                                section.validate_errors = []
+                            section.validate_errors.append(
+                                LASFileCriticalError(
+                                    f"Error adding mnemonics to data section: "
+                                    f"{str(e)}"
+                                )
+                            )
+                            # Don't try to assign generic column names
 
     def aggregate_section_errors(self):
         if hasattr(self, 'sections'):
