@@ -56,7 +56,14 @@ def test_read_las():
         print(f"DEBUG: version_error = {getattr(las, 'version_error', 'NOT_FOUND')}")
         print(f"DEBUG: split_error = {getattr(las, 'split_error', 'NOT_FOUND')}")
         print(f"DEBUG: parse_errors = {getattr(las, 'parse_errors', 'NOT_FOUND')}")
-        print(f"DEBUG: validate_errors = {getattr(las, 'validate_errors', 'NOT_FOUND')}")
+        # Check validate_errors safely
+        validate_errors = getattr(las, 'validate_errors', 'NOT_FOUND')
+        print(f"DEBUG: validate_errors = {validate_errors}")
+        # Also check well.df if it exists
+        if hasattr(las, 'well') and hasattr(las.well, 'df'):
+            print(f"DEBUG: well.df head = {las.well.df.head()}")
+            if 'errors' in las.well.df.columns:
+                print(f"DEBUG: well.df errors column = {las.well.df['errors'].tolist()}")
         # Run the error check function to check for critical errors
         result = error_check(las)
         print(f"DEBUG: error_check result = {result}")
