@@ -49,25 +49,8 @@ def test_read_las():
         assert getattr(las, "well") is not None
         assert getattr(las, "curves") is not None
         assert getattr(las, "data") is not None
-        # Debug: Print error attributes before error_check
-        print(f"DEBUG: Checking {las_path}")
-        print(f"DEBUG: open_error = {getattr(las, 'open_error', 'NOT_FOUND')}")
-        print(f"DEBUG: read_error = {getattr(las, 'read_error', 'NOT_FOUND')}")
-        print(f"DEBUG: version_error = {getattr(las, 'version_error', 'NOT_FOUND')}")
-        print(f"DEBUG: split_error = {getattr(las, 'split_error', 'NOT_FOUND')}")
-        print(f"DEBUG: parse_errors = {getattr(las, 'parse_errors', 'NOT_FOUND')}")
-        # Check validate_errors safely
-        validate_errors = getattr(las, 'validate_errors', 'NOT_FOUND')
-        print(f"DEBUG: validate_errors = {validate_errors}")
-        # Also check well.df if it exists
-        if hasattr(las, 'well') and hasattr(las.well, 'df'):
-            print(f"DEBUG: well.df head = {las.well.df.head()}")
-            if 'errors' in las.well.df.columns:
-                print(f"DEBUG: well.df errors column = {las.well.df['errors'].tolist()}")
         # Run the error check function to check for critical errors
-        result = error_check(las)
-        print(f"DEBUG: error_check result = {result}")
-        assert result is True
+        assert error_check(las) is True
 
 
 def test_api_from_las():

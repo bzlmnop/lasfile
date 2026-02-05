@@ -8,6 +8,7 @@ from io import StringIO
 from numpy import genfromtxt
 # from numpy import array
 # from csv import reader
+import pandas as pd
 from pandas import DataFrame
 from pandas import read_csv
 import warnings
@@ -1125,18 +1126,23 @@ def validate_v2_well(df):
         # list, and the value in the errors column is not None, append
         # a the error to the validate_errors list
         for index, row in df.iterrows():
-            if row["mnemonic"] in req_mnemonics and row["errors"] is not None:
+            # Use pd.isna() to check for both None and NaN
+            errors_val = row["errors"]
+            is_error = errors_val is not None and not (
+                isinstance(errors_val, float) and pd.isna(errors_val)
+            )
+            if row["mnemonic"] in req_mnemonics and is_error:
                 validate_errors.append(
                     LASFileCriticalError(
                         f"Error parsing required header line "
-                        f"'{index}', {row['errors']}"
+                        f"'{index}', {errors_val}"
                     )
                 )
-            elif row["errors"] is not None:
+            elif is_error:
                 validate_errors.append(
                     LASFileMinorError(
                         f"Error parsing header line '{index}', "
-                        f"{row['errors']}"
+                        f"{errors_val}"
                     )
                 )
     return validate_errors
@@ -1287,18 +1293,23 @@ def validate_v3_well(df):
         # list, and the value in the errors column is not None, append
         # a the error to the validate_errors list
         for index, row in df.iterrows():
-            if row["mnemonic"] in req_mnemonics and row["errors"] is not None:
+            # Use pd.isna() to check for both None and NaN
+            errors_val = row["errors"]
+            is_error = errors_val is not None and not (
+                isinstance(errors_val, float) and pd.isna(errors_val)
+            )
+            if row["mnemonic"] in req_mnemonics and is_error:
                 validate_errors.append(
                     LASFileCriticalError(
                         f"Error parsing required header line "
-                        f"'{index}', {row['errors']}"
+                        f"'{index}', {errors_val}"
                     )
                 )
-            elif row["errors"] is not None:
+            elif is_error:
                 validate_errors.append(
                     LASFileMinorError(
                         f"Error parsing header line '{index}', "
-                        f"{row['errors']}"
+                        f"{errors_val}"
                     )
                 )
     return validate_errors
