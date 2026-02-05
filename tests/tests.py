@@ -59,6 +59,6 @@ def test_api_from_las():
         # try the file paths
         assert api_from_las(las_path) is not None
 
-
-test_read_las()
-test_api_from_las()
+if __name__ == "__main__":
+    test_read_las()
+    test_api_from_las()
