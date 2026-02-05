@@ -49,8 +49,18 @@ def test_read_las():
         assert getattr(las, "well") is not None
         assert getattr(las, "curves") is not None
         assert getattr(las, "data") is not None
+        # Debug: Print error attributes before error_check
+        print(f"DEBUG: Checking {las_path}")
+        print(f"DEBUG: open_error = {getattr(las, 'open_error', 'NOT_FOUND')}")
+        print(f"DEBUG: read_error = {getattr(las, 'read_error', 'NOT_FOUND')}")
+        print(f"DEBUG: version_error = {getattr(las, 'version_error', 'NOT_FOUND')}")
+        print(f"DEBUG: split_error = {getattr(las, 'split_error', 'NOT_FOUND')}")
+        print(f"DEBUG: parse_errors = {getattr(las, 'parse_errors', 'NOT_FOUND')}")
+        print(f"DEBUG: validate_errors = {getattr(las, 'validate_errors', 'NOT_FOUND')}")
         # Run the error check function to check for critical errors
-        assert error_check(las) is True
+        result = error_check(las)
+        print(f"DEBUG: error_check result = {result}")
+        assert result is True
 
 
 def test_api_from_las():
