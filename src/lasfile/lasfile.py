@@ -1598,7 +1598,7 @@ class LASData():
                         # )
                         self.df = read_csv(
                             f,
-                            delim_whitespace=True,
+                            sep=r"\s+",
                             header=None
                         )
                     elif delim == ',':
@@ -1624,7 +1624,7 @@ class LASData():
                     else:
                         self.df = read_csv(
                             f,
-                            delim_whitespace=True,
+                            sep=r"\s+",
                             header=None
                         )
                     # Convert the numpy array to a pandas DataFrame
